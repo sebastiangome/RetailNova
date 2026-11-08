@@ -1,0 +1,75 @@
+{
+  "tarea": "H5-T2",
+  "datos": "Sintéticos; lecturas únicamente de predictores de CSV preparado",
+  "modelo": "XGBoost",
+  "umbral_congelado_en_validacion": 0.15000000000000002,
+  "volumenes": [
+    1000,
+    10000,
+    75000,
+    150000
+  ],
+  "tam_lote": 10000,
+  "repeticiones": 3,
+  "medicion": "Tiempo total de lectura CSV y predict_proba por lotes; modelo ya cargado y calentado; sin persistir CSV dentro del benchmark",
+  "memoria": "RSS total del proceso muestreado cada ~20 ms (no memoria máxima exacta ni por inferencia individual)",
+  "cpu": "time.process_time() mide segundos de CPU de proceso, sumando hilos; no es porcentaje de utilización",
+  "entorno": {
+    "sistema": "Windows",
+    "python": "3.11.9",
+    "cpu_logicas": 16,
+    "ram_sistema_gb": 31.92
+  },
+  "resultados": [
+    {
+      "volumen": 1000,
+      "mediana_segundos": 0.010232200002064928,
+      "min_segundos": 0.009936700022080913,
+      "max_segundos": 0.01152099997852929,
+      "mediana_filas_por_segundo": 97730.69328181555,
+      "mediana_cpu_segundos": 0.0625,
+      "max_rss_pico_mb": 279.76953125,
+      "mediana_rss_incremento_mb": 0.01953125
+    },
+    {
+      "volumen": 10000,
+      "mediana_segundos": 0.03456840000580996,
+      "min_segundos": 0.03095670000766404,
+      "max_segundos": 0.036944700026651844,
+      "mediana_filas_por_segundo": 289281.54031772615,
+      "mediana_cpu_segundos": 0.125,
+      "max_rss_pico_mb": 289.4765625,
+      "mediana_rss_incremento_mb": 7.6015625
+    },
+    {
+      "volumen": 75000,
+      "mediana_segundos": 0.39346479999949224,
+      "min_segundos": 0.26417149999178946,
+      "max_segundos": 0.40786500001559034,
+      "mediana_filas_por_segundo": 190614.25571003248,
+      "mediana_cpu_segundos": 1.421875,
+      "max_rss_pico_mb": 292.1484375,
+      "mediana_rss_incremento_mb": 7.5859375
+    },
+    {
+      "volumen": 150000,
+      "mediana_segundos": 0.594475899997633,
+      "min_segundos": 0.5729553999844939,
+      "max_segundos": 0.6399129000201356,
+      "mediana_filas_por_segundo": 252323.09669844861,
+      "mediana_cpu_segundos": 2.359375,
+      "max_rss_pico_mb": 294.6640625,
+      "mediana_rss_incremento_mb": 8.671875
+    }
+  ],
+  "ventana_operacional": null,
+  "limitaciones": [
+    "Datos sintéticos, no carga real de infraestructura productiva",
+    "La lectura desde disco depende de la caché, velocidad del dispositivo y procesos concurrentes",
+    "RSS incluye Python, librerías, el modelo cargado y asignaciones previas; el sondeo puede omitir picos breves",
+    "Benchmark sobre los predictores del CSV preparado, sin medir generación/preparación ETL ni escritura masiva de resultados",
+    "Las tasas de alertas no representan desempeño predictivo; no se leyeron etiquetas y no se ajustaron umbrales",
+    "Sin ventana objetivo explícita no es posible afirmar cumplimiento de una ventana nocturna"
+  ],
+  "ejemplo_predicciones": "output/batch/predicciones_ejemplo.csv"
+}
