@@ -1,148 +1,105 @@
-"""Pipeline simple de preparación de datos de LOGISMART (H2-T4 a H3-T4).
+"""Preparación de datos: coherencia temporal, imputación, validación y variables RFM.
 
-Uso desde la raíz del repositorio:
-    python -m src.pipeline_datos --muestra 20000     # prueba rápida
-    python -m src.pipeline_datos                     # dataset completo
-
-Las transformaciones de este archivo son deterministas (no aprenden nada de los
-datos). La imputación de nulos se aprende solo con el entrenamiento, usando
-`construir_preprocesador()` en el notebook de modelado.
+No modifica `data/raw/`; escribe en `data/processed/`. Continúa la secuencia del
+generador aleatorio guardada por `generador_dataset.generar` para que el resultado
+sea idéntico al del flujo completo.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-import hmac
-import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-# --- Columnas ---------------------------------------------------------------
-OBJETIVO = "retraso"
-FECHA = "fecha"
-IDENTIFICADORES = ["id_entrega", "id_conductor"]
-POSTERIORES_AL_DESPACHO = ["retraso_salida_min", "duracion_real_min", "incidencias", "estado_final"]
-PROHIBIDAS = IDENTIFICADORES + POSTERIORES_AL_DESPACHO  # nunca como predictoras
-
-PREDICTORES = [
-    "hora_programada", "comuna_origen", "comuna_destino", "distancia_km", "tipo_vehiculo",
-    "experiencia_conductor_anios", "n_paquetes", "peso_kg", "volumen_m3",
-    "duracion_estimada_min", "n_paradas", "dia_semana", "mes",
-]
-DERIVADAS = ["es_fin_de_semana", "es_hora_punta", "franja_horaria", "paquetes_por_parada"]
-CATEGORICAS = ["comuna_origen", "comuna_destino", "tipo_vehiculo", "franja_horaria"]
-NUMERICAS = [c for c in PREDICTORES + DERIVADAS if c not in CATEGORICAS]
-
-HORAS_PUNTA = (8, 9, 17, 18, 19)
-SAL = "logismart-seudonimo-v1"  # codificación simple; opcional: variable LOGISMART_CLAVE_SEUDONIMO
+from src import config as cfg
+from src.generador_dataset import cargar_estado_rng
 
 
-# --- H2-T4: seudonimización -------------------------------------------------
-def seudonimizar_conductores(df: pd.DataFrame, clave: str | None = None) -> pd.DataFrame:
-    """Reemplaza `id_conductor` por un código estable `COND-xxxx` (mismo conductor = mismo código).
+def diagnostico_nulos(df: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame({
+        "Nulos": df.isnull().sum(),
+        "Porcentaje (%)": (df.isnull().mean() * 100).round(2),
+    })
 
-    No guarda tabla de correspondencia. Es una codificación simple: no impide
-    recalcular el código de un ID conocido.
+
+def corregir_coherencia_temporal(df: pd.DataFrame, rng: np.random.Generator) -> int:
+    """Un cliente no puede comprar antes de registrarse: mueve el registro hacia atrás.
+
+    Devuelve cuántos registros se corrigieron. No altera la definición de abandono.
     """
-    clave_bytes = (clave or os.environ.get("LOGISMART_CLAVE_SEUDONIMO") or SAL).encode()
-    codigos = {
-        i: "COND-" + hmac.new(clave_bytes, str(i).encode(), hashlib.sha256).hexdigest()[:12]
-        for i in df["id_conductor"].dropna().unique()
-    }
-    assert len(set(codigos.values())) == len(codigos), "Códigos repetidos entre conductores"
-    salida = df.copy()
-    salida["id_conductor"] = df["id_conductor"].map(codigos)
-    return salida
+    df["fecha_registro"] = pd.to_datetime(df["fecha_registro"])
+    df["fecha_ultima_compra"] = pd.to_datetime(df["fecha_ultima_compra"])
+    idx = df[(df["fecha_ultima_compra"] - df["fecha_registro"]).dt.days < 0].index
+    if len(idx) > 0:
+        desfase = rng.integers(0, 60, size=len(idx))
+        df.loc[idx, "fecha_registro"] = df.loc[idx, "fecha_ultima_compra"] - pd.to_timedelta(desfase, unit="D")
+    return int(len(idx))
 
 
-# --- H3-T1: validación y limpieza -------------------------------------------
-def validar_calidad(df: pd.DataFrame) -> pd.DataFrame:
-    """Cuenta filas que incumplen cada regla básica. No modifica ni elimina filas."""
-    reglas = {
-        "id_entrega duplicado": df["id_entrega"].duplicated(),
-        "fila completa duplicada": df.duplicated(),
-        "hora_programada fuera de 0-23": ~df["hora_programada"].between(0, 23),
-        "distancia_km <= 0": df["distancia_km"] <= 0,
-        "n_paquetes < 1": df["n_paquetes"] < 1,
-        "n_paradas < 1": df["n_paradas"] < 1,
-        "peso_kg <= 0": df["peso_kg"] <= 0,  # los nulos no cuentan como inválidos
-        "retraso no binario": ~df[OBJETIVO].isin([0, 1]),
-    }
-    return pd.DataFrame({"filas_afectadas": {k: int(v.sum()) for k, v in reglas.items()}})
+def imputar_nulos(df: pd.DataFrame, rng: np.random.Generator) -> None:
+    """Imputación justificada: mediana (edad), moda (canal), mediana por canal (monto)
+    y comuna aleatoria válida dentro de la misma región."""
+    df["edad"] = df["edad"].fillna(df["edad"].median())
+    df["canal_compra"] = df["canal_compra"].fillna(df["canal_compra"].mode()[0])
+    mediana_canal = df.groupby("canal_compra")["monto_promedio_compra"].transform("median")
+    df["monto_promedio_compra"] = df["monto_promedio_compra"].fillna(mediana_canal)
+    for region in df["region"].unique():
+        mascara = (df["region"] == region) & df["comuna"].isnull()
+        if mascara.any():
+            df.loc[mascara, "comuna"] = rng.choice(cfg.COMUNAS[region], size=int(mascara.sum()))
 
 
-def aplicar_limpieza(df: pd.DataFrame) -> pd.DataFrame:
-    """Valida y normaliza tipos. No elimina filas ni imputa (los nulos se conservan)."""
-    resumen = validar_calidad(df)
-    if resumen["filas_afectadas"].sum() > 0:
-        raise ValueError(f"Datos con reglas incumplidas:\n{resumen}")
-    salida = df.copy()
-    salida[FECHA] = pd.to_datetime(salida[FECHA])
-    return salida
+def validar_dataset(df: pd.DataFrame) -> None:
+    """Validaciones de calidad; lanza ValueError con el motivo si alguna falla."""
+    if df.isnull().sum().sum() != 0:
+        raise ValueError("Aún existen valores nulos en el DataFrame")
+    if not (pd.to_datetime(df["fecha_registro"]) <= pd.to_datetime(df["fecha_ultima_compra"])).all():
+        raise ValueError("Hay fechas de registro posteriores a la última compra")
+    for region, comunas in cfg.COMUNAS.items():
+        invalidas = set(df.loc[df["region"] == region, "comuna"]) - set(comunas)
+        if invalidas:
+            raise ValueError(f"Comunas {sorted(invalidas)} no pertenecen a la región {region}")
+    if not df["edad"].between(18, 80).all():
+        raise ValueError("Edades fuera del rango permitido (18 a 80 años)")
+    tasa = df["abandono"].mean()
+    if not 0.20 <= tasa <= 0.28:
+        raise ValueError(f"Tasa de abandono fuera del rango esperado: {tasa:.4f}")
+    if not df["id_cliente"].is_unique:
+        raise ValueError("Existen IDs de cliente duplicados")
 
 
-# --- H3-T4: características -------------------------------------------------
-def generar_caracteristicas(df: pd.DataFrame) -> pd.DataFrame:
-    """Variables derivadas calculables antes del despacho."""
-    salida = df.copy()
-    salida["es_fin_de_semana"] = (salida["dia_semana"] >= 5).astype(int)
-    salida["es_hora_punta"] = salida["hora_programada"].isin(HORAS_PUNTA).astype(int)
-    salida["franja_horaria"] = pd.cut(
-        salida["hora_programada"], bins=[-1, 11, 16, 23], labels=["manana", "tarde", "cierre"]
-    ).astype(str)
-    salida["paquetes_por_parada"] = salida["n_paquetes"] / salida["n_paradas"]
-    return salida
+def agregar_rfm(df: pd.DataFrame) -> pd.DataFrame:
+    """Recencia, antigüedad y tasas por compra (RFM del plan, actividad 1.4.3)."""
+    out = df.copy()
+    ult = pd.to_datetime(out["fecha_ultima_compra"])
+    reg = pd.to_datetime(out["fecha_registro"])
+    compras = out["cantidad_compras"].clip(lower=1)
+    out["recencia_dias"] = (cfg.FECHA_CORTE - ult).dt.days
+    out["antiguedad_dias"] = (cfg.FECHA_CORTE - reg).dt.days
+    out["tasa_reclamos"] = out["reclamos"] / compras
+    out["tasa_devoluciones"] = out["devoluciones"] / compras
+    return out
 
 
-# --- H3-T2: minimización ----------------------------------------------------
-def minimizar_para_modelado(df: pd.DataFrame) -> pd.DataFrame:
-    """Deja solo predictores preventivos + fecha + retraso (sin identificadores)."""
-    modelo = df[PREDICTORES + DERIVADAS + [FECHA, OBJETIVO]].copy()
-    assert not set(PROHIBIDAS) & set(modelo.columns), "Hay columnas prohibidas en el modelado"
-    return modelo
+def preparar_datos(entrada: Path = cfg.CSV_12M, estado_rng: Path = cfg.ESTADO_RNG,
+                   salida: Path = cfg.CSV_PREPARADO) -> pd.DataFrame:
+    """Proceso `preparar`: limpieza + validación + RFM → data/processed/."""
+    entrada, salida = Path(entrada), Path(salida)
+    if not entrada.is_file():
+        raise FileNotFoundError(f"No existe {entrada}; ejecuta primero --proceso generar")
+    rng = cargar_estado_rng(estado_rng)
+    df = pd.read_csv(entrada)
 
+    print("Nulos iniciales:", diagnostico_nulos(df).query("Nulos > 0")["Nulos"].to_dict())
+    corregidos = corregir_coherencia_temporal(df, rng)
+    print(f"Inconsistencias temporales corregidas: {corregidos}")
+    imputar_nulos(df, rng)
+    validar_dataset(df)
+    df = agregar_rfm(df)
 
-# --- Imputación (solo se ajusta con entrenamiento) ---------------------------
-def construir_preprocesador():
-    """Imputación por mediana + one-hot. Usar `fit` SOLO con train, luego `transform`."""
-    from sklearn.compose import ColumnTransformer
-    from sklearn.impute import SimpleImputer
-    from sklearn.preprocessing import OneHotEncoder
-
-    return ColumnTransformer([
-        ("num", SimpleImputer(strategy="median", add_indicator=True), NUMERICAS),
-        ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAS),
-    ])
-
-
-# --- Orquestación -----------------------------------------------------------
-def preparar_datos(
-    entrada: str | Path = "data/raw/logismart_entregas_simuladas.csv",
-    salida: str | Path = "data/processed",
-    muestra: int | None = None,
-):
-    """Carga -> limpieza -> seudonimización -> características -> minimización -> guarda."""
-    raw = pd.read_csv(entrada, parse_dates=[FECHA], nrows=muestra)
-    preparado = generar_caracteristicas(seudonimizar_conductores(aplicar_limpieza(raw)))
-    modelo = minimizar_para_modelado(preparado)
-    assert len(raw) == len(preparado) == len(modelo), "Cambió la cantidad de registros"
-
-    salida = Path(salida)
-    salida.mkdir(parents=True, exist_ok=True)
-    preparado.to_csv(salida / "logismart_preparado.csv", index=False)
-    modelo.to_csv(salida / "logismart_modelado.csv", index=False)
-
-    print(f"Filas: {len(raw):,} | preparado: {preparado.shape[1]} cols | modelado: {modelo.shape[1]} cols")
-    print("Nulos conservados (se imputan en el modelado):")
-    print(modelo.isna().sum()[lambda s: s > 0].to_string())
-    return preparado, modelo
-
-
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Preparación de datos LOGISMART")
-    ap.add_argument("--entrada", default="data/raw/logismart_entregas_simuladas.csv")
-    ap.add_argument("--salida", default="data/processed")
-    ap.add_argument("--muestra", type=int, default=None, help="usar solo las primeras N filas")
-    a = ap.parse_args()
-    preparar_datos(a.entrada, a.salida, a.muestra)
+    for col in ("fecha_registro", "fecha_ultima_compra"):
+        df[col] = df[col].dt.strftime("%Y-%m-%d")
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(salida, index=False)
+    print(f"Dataset preparado: {len(df):,} filas · 0 nulos · {salida}")
+    return df

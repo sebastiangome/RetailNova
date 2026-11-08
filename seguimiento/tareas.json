@@ -1,0 +1,24 @@
+{
+  "proyecto": "RetailNova",
+  "curso": "SCY1102 Gestión de Proyectos de Datos — Sección 001D",
+  "fuente": "WBS y cronograma del plan de proyecto (EP3), seguimiento EP5",
+  "fecha_corte": "2026-11-07",
+  "tareas": [
+    {"id": "T01", "titulo": "Aprobación del alcance", "responsable": "Hurtubia", "planificado": "01–15 ago", "ejecutado": "01–18 ago", "estado": "Completado", "evidencia": "Plan de proyecto EP3"},
+    {"id": "T02", "titulo": "Generación de datos sintéticos (3 años)", "responsable": "Gómez", "planificado": "01–15 sep", "ejecutado": "01–15 sep", "estado": "Completado", "evidencia": "src/generador_dataset.py"},
+    {"id": "T03", "titulo": "Limpieza, imputación y validación", "responsable": "Curi", "planificado": "16–30 sep", "ejecutado": "16–30 sep", "estado": "Completado", "evidencia": "src/pipeline_datos.py"},
+    {"id": "T04", "titulo": "Feature engineering (RFM)", "responsable": "Pacheco", "planificado": "01–07 oct", "ejecutado": "01–09 oct", "estado": "Completado", "evidencia": "src/pipeline_datos.py · agregar_rfm"},
+    {"id": "T05", "titulo": "Modelamiento y selección de modelo", "responsable": "Gómez, Curi", "planificado": "08–20 oct", "ejecutado": "08–25 oct", "estado": "Completado", "evidencia": "src/modelado.py"},
+    {"id": "T06", "titulo": "Evaluación regional (RNF6)", "responsable": "Hurtubia", "planificado": "21–25 oct", "ejecutado": "26–28 oct", "estado": "Completado", "evidencia": "src/equidad_regional.py"},
+    {"id": "T07", "titulo": "Explicabilidad (SHAP)", "responsable": "Pacheco", "planificado": "26–31 oct", "ejecutado": "29–31 oct", "estado": "Completado", "evidencia": "src/explicabilidad.py"},
+    {"id": "T08", "titulo": "Dashboard interactivo", "responsable": "Curi", "planificado": "01–05 nov", "ejecutado": "01–03 nov", "estado": "Completado", "evidencia": "dashboard/index.html"},
+    {"id": "T09", "titulo": "Tablero de gestión y reportes de estado", "responsable": "Gómez", "planificado": "15–31 oct", "ejecutado": "03 nov", "estado": "Completado", "evidencia": "seguimiento/tareas.json"},
+    {"id": "T10", "titulo": "Informe EP5", "responsable": "Hurtubia, Gómez", "planificado": "01–05 nov", "ejecutado": "03 nov", "estado": "Completado", "evidencia": "Informe EP5"},
+    {"id": "T11", "titulo": "Presentación de venta (Ítem II)", "responsable": "Equipo completo", "planificado": "05–07 nov", "ejecutado": "Material listo; falta exponer", "estado": "En proceso", "evidencia": "Presentación y guión de defensa"}
+  ],
+  "desviaciones": [
+    {"id": "DV-1", "tipo": "Técnica", "descripcion": "En una iteración intermedia Biobío no cumplía RNF6 (brecha de F1 de 12,3 %; muestra de prueba más chica).", "accion": "Se reforzó la validación (CV + umbral OOF) y se volvió a auditar; versión final con brecha máxima de 2,6 %. Riesgo a vigilar con datos reales."},
+    {"id": "DV-2", "tipo": "Gestión", "descripcion": "El tablero de gestión se actualizó al cierre del ciclo y no en paralelo, como estaba planificado.", "accion": "Sin impacto en la fecha de entrega. Para EP6 se actualiza semanalmente."},
+    {"id": "DV-3", "tipo": "Alcance", "descripcion": "Se agregó validación cruzada de 5 folds y ajuste de umbral por OOF, no contemplados en el plan original (atrasó el modelamiento 5 días).", "accion": "Mejora deliberada de rigor metodológico; se registra el cambio para mantener la trazabilidad plan ↔ ejecución."}
+  ]
+}

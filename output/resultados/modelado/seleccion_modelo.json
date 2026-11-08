@@ -1,0 +1,17 @@
+{
+  "modelo": "Regresión Logística",
+  "umbral_decision": 0.641514988628949,
+  "recall_oof": 0.7500507202272266,
+  "precision_oof": 0.6514537444933921,
+  "auc_cv": {
+    "Random Forest": [
+      0.9092022674531866,
+      0.0023245476211563977
+    ],
+    "Regresión Logística": [
+      0.9081750391649918,
+      0.0018144262558737574
+    ]
+  },
+  "n_entrenamiento": 41076
+}

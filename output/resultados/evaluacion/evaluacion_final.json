@@ -1,0 +1,57 @@
+{
+  "modelo": "Regresión Logística",
+  "umbral_decision": 0.641514988628949,
+  "n_prueba": 10270,
+  "cumple_meta_recall": true,
+  "meta_recall": 0.7,
+  "metricas": [
+    {
+      "Umbral": "0.50 (referencia)",
+      "ROC_AUC": 0.9071315131897819,
+      "PR_AUC": 0.7447369459519947,
+      "Recall": 0.8523326572008113,
+      "Precisión": 0.5893408134642356,
+      "F1": 0.696849087893864,
+      "Alertas generadas": 3565
+    },
+    {
+      "Umbral": "0.6415 (OOF)",
+      "ROC_AUC": 0.9071315131897819,
+      "PR_AUC": 0.7447369459519947,
+      "Recall": 0.7395537525354969,
+      "Precisión": 0.6464539007092198,
+      "F1": 0.6898770104068117,
+      "Alertas generadas": 2820
+    }
+  ],
+  "regional": [
+    {
+      "Región": "Biobío",
+      "N clientes (test)": 1180,
+      "Tasa abandono real": 0.226,
+      "F1": 0.708,
+      "Recall": 0.775,
+      "Diferencia vs. F1 general (%)": 2.6,
+      "¿Cumple RNF6 (<10%)?": "Sí"
+    },
+    {
+      "Región": "Metropolitana",
+      "N clientes (test)": 7387,
+      "Tasa abandono real": 0.237,
+      "F1": 0.689,
+      "Recall": 0.743,
+      "Diferencia vs. F1 general (%)": 0.1,
+      "¿Cumple RNF6 (<10%)?": "Sí"
+    },
+    {
+      "Región": "Valparaíso",
+      "N clientes (test)": 1703,
+      "Tasa abandono real": 0.262,
+      "F1": 0.68,
+      "Recall": 0.704,
+      "Diferencia vs. F1 general (%)": 1.4,
+      "¿Cumple RNF6 (<10%)?": "Sí"
+    }
+  ],
+  "nota": "Escenario sintético: no son resultados reales de RetailNova."
+}

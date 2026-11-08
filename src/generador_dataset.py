@@ -1,131 +1,164 @@
-"""Generación académica de operaciones de reparto sintéticas de LOGISMART.
+"""Generación de la base sintética de RetailNova y recorte a los últimos 12 meses.
 
-Cada fila representa una operación de reparto que puede contener varios paquetes
-y paradas; NO equivale necesariamente a un envío individual. La escala se
-inspira en los volúmenes del caso, pero no replica directamente sus 1,8 millones
-de envíos históricos. Distribuciones y relaciones son supuestos, no mediciones.
+Los datos son 100 % sintéticos (RNF1/RNF5: sin información personal real). El
+generador usa una única semilla y un único `Generator` de NumPy; el estado del
+generador se guarda al terminar para que la etapa de limpieza continúe la misma
+secuencia aleatoria y el resultado sea idéntico en cualquier máquina.
 """
+from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-INTERCEPTO = -5.10
+from src import config as cfg
 
 
-def generar_dataset(n: int = 1_050_000, semilla: int = 42) -> pd.DataFrame:
-    """Devuelve operaciones simuladas sin escribir archivos ni alterar estado global.
+def probabilidad_abandono(frecuencia, reclamos, devoluciones, marketing, promociones,
+                          tienda_fisica, ruido):
+    """Modelo logístico que genera el comportamiento de abandono simulado."""
+    z = (-1.3
+         - 0.9 * (frecuencia - frecuencia.mean())
+         + 0.6 * reclamos
+         + 0.25 * devoluciones
+         - 0.15 * marketing
+         - 0.4 * promociones
+         + 0.3 * tienda_fisica
+         + ruido)
+    return 1 / (1 + np.exp(-z))
 
-    La semilla reproduce la simulación en un entorno de dependencias fijo.
-    """
+
+def generar_base_historica(n: int = cfg.N_HISTORICO, semilla: int = cfg.SEMILLA):
+    """Base histórica de `n` clientes (3 años). Devuelve (DataFrame, Generator)."""
     if n <= 0:
-        raise ValueError("La cantidad de registros debe ser positiva")
+        raise ValueError("n debe ser mayor que cero")
     rng = np.random.default_rng(semilla)
-    N = n
-    comunas = {  # comuna: (peso de volumen, zona, factor de congestión)
-        'Santiago':(14,'RM',1.25),'Providencia':(8,'RM',1.15),'Las Condes':(10,'RM',1.20),'Ñuñoa':(7,'RM',1.05),
-        'Maipú':(9,'RM',1.10),'La Florida':(8,'RM',1.10),'Puente Alto':(7,'RM',1.15),'San Bernardo':(5,'RM',1.00),
-        'Quilicura':(5,'RM',1.00),'Pudahuel':(4,'RM',1.05),'Colina':(1.2,'RM',0.95),'Lampa':(0.8,'RM',0.95),
-        'Valparaíso':(5,'V',1.15),'Viña del Mar':(5,'V',1.10),'Quilpué':(2,'V',1.00),'Villa Alemana':(1.5,'V',0.95),
-        'Concón':(0.8,'V',0.95),'Casablanca':(0.4,'V',0.90),'Quintero':(0.3,'V',0.90),
-    }
-    nombres = list(comunas)
-    pesos = np.array([comunas[c][0] for c in nombres]); pesos = pesos/pesos.sum()
 
-    # Conductores: 600, cada uno con 2-3 comunas de preferencia
-    n_cond = 600
-    cond_exp = np.clip(rng.gamma(3.0, 1.1, n_cond), 0.2, 15).round(1)          # años de experiencia
-    cond_comunas = [rng.choice(len(nombres), size=rng.integers(2,4), replace=False, p=pesos) for _ in range(n_cond)]
+    # Geografía, demografía y antigüedad
+    region = rng.choice(list(cfg.COMUNAS), size=n, p=cfg.PESOS_REGION)
+    comuna = np.array([rng.choice(cfg.COMUNAS[r]) for r in region])
+    edad = rng.normal(40, 12, n).clip(18, 80).round().astype(int)
+    dias_registro = rng.integers(30, 36 * 30, n)
+    canal = rng.choice(cfg.CANALES, size=n, p=[0.40, 0.35, 0.25])
 
-    destino_idx = rng.choice(len(nombres), size=N, p=pesos)
-    cond_id = np.empty(N, dtype=int)
-    por_comuna = {k: [j for j,l in enumerate(cond_comunas) if k in l] for k in range(len(nombres))}
-    for k in range(len(nombres)):
-        idx = np.where(destino_idx==k)[0]
-        pool = por_comuna[k] if len(por_comuna[k])>0 else list(range(n_cond))
-        cond_id[idx] = rng.choice(pool, size=len(idx))
+    # Hábitos de compra
+    meses_activo = dias_registro / 30
+    frecuencia = rng.gamma(2.0, 0.6, n).round(2)                    # compras por mes
+    cantidad_compras = np.maximum(1, rng.poisson(frecuencia * meses_activo * 0.5))
+    monto_promedio = rng.lognormal(10.8, 0.6, n).round(-2)          # CLP
+    monto_total = (monto_promedio * cantidad_compras).round(-2)
 
-    origen_idx = np.where(rng.random(N)<0.7,
-                          np.where(rng.random(N)<0.5, nombres.index('Quilicura'), nombres.index('Pudahuel')),
-                          rng.choice(len(nombres), size=N, p=pesos))
+    categorias_lista = ["Hogar", "Tecnología", "Electrodomésticos"]
+    n_cat = rng.integers(1, 4, n)
+    categorias = [", ".join(sorted(rng.choice(categorias_lista, k, replace=False))) for k in n_cat]
 
-    # Histórico sintético de 14 meses: agosto de 2025 a septiembre de 2026.
-    # Selección uniforme del mes para aproximar 75.000 entregas mensuales con N=1.050.000.
-    inicios_mes = pd.date_range('2025-08-01', '2026-09-01', freq='MS')
-    idx_mes = rng.integers(0, len(inicios_mes), size=N)
-    dias_mes = inicios_mes.days_in_month.to_numpy()
-    dia_aleatorio = rng.integers(0, dias_mes[idx_mes], size=N)
-    fecha = pd.to_datetime(inicios_mes.to_numpy()[idx_mes] + dia_aleatorio.astype('timedelta64[D]'))
-    hora_prog = rng.choice(np.arange(8,20), size=N, p=np.array([5,8,10,9,8,8,9,10,10,9,7,4])/97)
-    vehiculo = rng.choice(['Moto','Furgón','Camioneta','Camión'], size=N, p=[0.22,0.38,0.30,0.10])
-    distancia = np.clip(rng.gamma(2.4, 5.5, N), 1.5, 90).round(1)
-    paquetes = np.clip(rng.poisson(14,N)+1, 1, 60)
-    peso = np.clip(paquetes*rng.normal(2.1,0.6,N), 0.5, 400).round(1)
-    volumen = np.clip(paquetes*rng.normal(0.018,0.006,N), 0.002, 4).round(3)
-    paradas = np.clip((paquetes*rng.uniform(0.5,0.95,N)).round(), 1, 45).astype(int)
-    dur_est = (distancia*np.where(vehiculo=='Moto',1.6,2.4) + paradas*np.where(vehiculo=='Moto',3.5,5.0)).round(0)
+    promociones = rng.binomial(1, 0.45, n)
+    devoluciones = rng.poisson(0.03 * cantidad_compras)
+    reclamos = rng.poisson(0.4, n)
+    marketing = rng.poisson(3, n)
+
+    # Variable objetivo calibrada a la tasa del caso (~24 %)
+    prob = probabilidad_abandono(frecuencia, reclamos, devoluciones, marketing, promociones,
+                                 (canal == "Tienda física"), rng.normal(0, 0.8, n))
+    abandono = (prob >= np.quantile(prob, 1 - cfg.TASA_ABANDONO)).astype(int)
+
+    # Coherencia temporal: abandono = más de 180 días sin comprar
+    dias_ult = np.where(abandono == 1, rng.integers(181, 540, n), rng.integers(0, 180, n))
+    dias_registro = np.maximum(dias_registro, dias_ult + rng.integers(0, 60, n))
+    fecha_registro = cfg.FECHA_CORTE - pd.to_timedelta(dias_registro, unit="D")
+    fecha_ultima_compra = cfg.FECHA_CORTE - pd.to_timedelta(dias_ult, unit="D")
 
     df = pd.DataFrame({
-        'id_entrega': np.arange(1, N+1),
-        'fecha': fecha,
-        'hora_programada': hora_prog,
-        'comuna_origen': np.array(nombres)[origen_idx],
-        'comuna_destino': np.array(nombres)[destino_idx],
-        'distancia_km': distancia,
-        'tipo_vehiculo': vehiculo,
-        'id_conductor': cond_id,
-        'experiencia_conductor_anios': cond_exp[cond_id],
-        'n_paquetes': paquetes,
-        'peso_kg': peso,
-        'volumen_m3': volumen,
-        'duracion_estimada_min': dur_est,
-        'n_paradas': paradas,
+        "id_cliente": [f"CL{i:06d}" for i in range(1, n + 1)],
+        "edad": edad.astype("float"),
+        "comuna": comuna,
+        "region": region,
+        "fecha_registro": fecha_registro.date,
+        "canal_compra": canal,
+        "cantidad_compras": cantidad_compras,
+        "frecuencia_compra": frecuencia,
+        "monto_promedio_compra": monto_promedio,
+        "monto_total_acumulado": monto_total,
+        "categorias_productos": categorias,
+        "uso_promociones": promociones,
+        "devoluciones": devoluciones,
+        "reclamos": reclamos,
+        "interacciones_marketing": marketing,
+        "fecha_ultima_compra": fecha_ultima_compra.date,
+        "abandono": abandono,
     })
-    df["dia_semana"] = df["fecha"].dt.day_of_week
-    df['mes'] = df['fecha'].dt.month
 
-    # --- Mecanismo generador del retraso (riesgo latente) ---
-    hora_punta = ((df.hora_programada.between(8,9)) | (df.hora_programada.between(17,19))).astype(int)
-    congestion = df['comuna_destino'].map({c: v[2] for c, v in comunas.items()}).to_numpy()
-    mes_inv = df['mes'].isin([6,7]).astype(int)     # invierno: más lluvia (el clima NO está disponible como variable)
-    hay_lluvia = (rng.random(N) < np.where(mes_inv==1, 0.18, 0.08)).astype(int)
-    sal_retraso = np.clip(rng.exponential(4,N) + 8*hay_lluvia*rng.random(N) + 6*hora_punta*rng.random(N), 0, 90).round(0)
+    # Datos faltantes simulados (el caso describe problemas de calidad)
+    idx_demo = rng.choice(n, int(n * 0.08), replace=False)
+    mitad = len(idx_demo) // 2
+    df.loc[idx_demo[:mitad], "edad"] = np.nan
+    df.loc[idx_demo[mitad:], "comuna"] = np.nan
+    df.loc[rng.choice(n, int(n * 0.02), replace=False), "monto_promedio_compra"] = np.nan
+    df.loc[rng.choice(n, int(n * 0.01), replace=False), "canal_compra"] = np.nan
+    return df, rng
 
-    # El incremento de retrasos se simula únicamente en abril-septiembre de 2026.
-    # Los meses anteriores tienen una situación base equivalente a abril de 2026.
-    meses_desde_abril = (df['fecha'].dt.year - 2026) * 12 + df['mes'] - 4
-    tendencia = meses_desde_abril.clip(lower=0, upper=5) / 5 * 0.80
-    z = (INTERCEPTO
-         + 0.045*df.distancia_km
-         + 0.055*df.n_paradas
-         + 0.018*(df.n_paquetes-14)
-         + 0.90*hora_punta
-         + 2.6*(congestion-1.0)
-         + 0.90*hay_lluvia
-         + 0.095*sal_retraso
-         - 0.11*df.experiencia_conductor_anios
-         + df.tipo_vehiculo.map({'Moto':0.0,'Furgón':0.20,'Camioneta':0.15,'Camión':0.65}).values
-         + 0.35*(df.dia_semana==4)
-         + tendencia
-         + rng.normal(0, 0.30, N))
-    prob = 1/(1+np.exp(-z))
-    retraso = (rng.random(N) < prob).astype(int)
 
-    # VARIABLES NO DISPONIBLES ANTES DEL DESPACHO (fuga de información):
-    # retraso_salida_min, duracion_real_min, incidencias y estado_final.
-    # "retraso" es la variable objetivo. Excluir también id_entrega e
-    # id_conductor del modelado inicial para evitar memorizar identificadores.
-    # Mantener estas columnas en el CSV para análisis histórico, pero nunca
-    # seleccionarlas automáticamente como predictores de riesgo preventivo.
-    extra = np.where(retraso==1, rng.uniform(15,90,N), rng.normal(-3,6,N))
-    df['retraso_salida_min'] = sal_retraso                         # minutos de atraso en la salida real (hora efectiva - programada)
-    df['duracion_real_min'] = np.clip(df.duracion_estimada_min + extra, 10, None).round(0)
-    df['incidencias'] = np.where(retraso==1, rng.choice([0,1,2,3],N,p=[.45,.30,.17,.08]), rng.choice([0,1,2],N,p=[.86,.11,.03]))
-    df['retraso'] = retraso
-    df['estado_final'] = np.where(retraso==1,'Entregada con retraso','Entregada a tiempo')
+def recortar_12_meses(df_historico: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    """Muestra de los últimos 12 meses (por fecha de registro) con el abandono recalculado."""
+    inicio = cfg.FECHA_CORTE - pd.DateOffset(months=cfg.MESES_MUESTRA)
+    fecha_reg = pd.to_datetime(df_historico["fecha_registro"])
+    df = df_historico[fecha_reg >= inicio].copy()
 
-    # Faltantes artificiales (no derivados de registros reales)
-    mask = rng.random(N) < 0.015
-    df.loc[mask, 'experiencia_conductor_anios'] = np.nan
-    mask = rng.random(N) < 0.01
-    df.loc[mask, 'peso_kg'] = np.nan
+    prob = probabilidad_abandono(
+        df["frecuencia_compra"], df["reclamos"], df["devoluciones"],
+        df["interacciones_marketing"], df["uso_promociones"],
+        (df["canal_compra"] == "Tienda física"), rng.normal(0, 0.8, len(df)))
+    df["abandono"] = (prob >= np.quantile(prob, 1 - cfg.TASA_ABANDONO)).astype(int)
+
+    dias_ult = np.where(df["abandono"] == 1,
+                        rng.integers(181, 350, len(df)), rng.integers(0, 180, len(df)))
+    df["fecha_ultima_compra"] = pd.Series(
+        cfg.FECHA_CORTE - pd.to_timedelta(dias_ult, unit="D"), index=df.index).dt.date
     return df
+
+
+def validar_base(df: pd.DataFrame) -> None:
+    """Validaciones básicas de la base cruda (no exige ausencia de nulos)."""
+    if df["id_cliente"].isna().any() or not df["id_cliente"].is_unique:
+        raise ValueError("Identificadores de cliente nulos o duplicados")
+    if not df["abandono"].isin([0, 1]).all():
+        raise ValueError("La variable abandono debe ser 0/1")
+    tasa = df["abandono"].mean()
+    if not 0.20 <= tasa <= 0.28:
+        raise ValueError(f"Tasa de abandono fuera de rango esperado: {tasa:.3f}")
+
+
+def guardar_estado_rng(rng: np.random.Generator, ruta: Path) -> None:
+    ruta = Path(ruta)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text(json.dumps(rng.bit_generator.state), encoding="utf-8")
+
+
+def cargar_estado_rng(ruta: Path) -> np.random.Generator:
+    rng = np.random.default_rng()
+    rng.bit_generator.state = json.loads(Path(ruta).read_text(encoding="utf-8"))
+    return rng
+
+
+def generar(registros: int = cfg.N_HISTORICO, semilla: int = cfg.SEMILLA,
+            carpeta: Path = cfg.DATA_RAW) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Proceso `generar`: escribe la base de 3 años, la de 12 meses y el estado del RNG."""
+    carpeta = Path(carpeta)
+    carpeta.mkdir(parents=True, exist_ok=True)
+    print(f"Generando {registros:,} clientes sintéticos (semilla {semilla})...")
+    historica, rng = generar_base_historica(registros, semilla)
+    validar_base(historica)
+    muestra = recortar_12_meses(historica, rng)
+    validar_base(muestra)
+
+    historica.to_csv(carpeta / cfg.CSV_3_ANIOS.name, index=False)
+    muestra.to_csv(carpeta / cfg.CSV_12M.name, index=False)
+    guardar_estado_rng(rng, carpeta / cfg.ESTADO_RNG.name)
+
+    print(f"Base histórica (3 años): {len(historica):,} filas · abandono {historica['abandono'].mean():.1%}")
+    print(f"Muestra 12 meses:        {len(muestra):,} filas · abandono {muestra['abandono'].mean():.1%}")
+    nulos = muestra.isna().sum()
+    print("Nulos en la muestra:", nulos[nulos > 0].to_dict())
+    return historica, muestra

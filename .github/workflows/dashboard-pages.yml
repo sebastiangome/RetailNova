@@ -1,4 +1,4 @@
-name: Publicar dashboard LOGISMART
+name: Publicar dashboard RetailNova
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
       - name: Subir dashboard
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dashboard
       - name: Publicar en GitHub Pages

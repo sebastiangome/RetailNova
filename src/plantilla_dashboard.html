@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>RetailNova — Dashboard de riesgo de abandono</title>
+<style>
+:root{--navy:#14213D;--orange:#F4A300;--cream:#F7F4EC;--card:#FFFDF8;--line:#E3DFD2;--ink:#1C2430;--sub:#5B6478;--alto:#C23B3B;--medio:#F4A300;--bajo:#2F9E6E}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",Arial,system-ui,sans-serif;color:var(--ink);background:var(--cream);font-size:15px;line-height:1.45}
+.shell{max-width:1360px;margin:0 auto;padding:24px 28px 20px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}.logo{width:40px;height:40px;border-radius:10px;background:var(--navy);color:var(--orange);display:grid;place-items:center;font-size:22px;font-weight:800}
+.brand strong{font-size:20px;color:var(--navy)}.brand small{display:block;color:var(--sub);font-size:11px;letter-spacing:.14em;font-weight:700}
+.pill{font-weight:700;font-size:12px;color:var(--navy);background:#FBE7B5;border:1px solid #EFD48A;padding:8px 14px;border-radius:99px}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:16px}
+.eyebrow{color:#8A5A00;font-size:11px;font-weight:800;letter-spacing:.14em;margin:0 0 6px}
+h1{font-size:32px;line-height:1.1;letter-spacing:-.03em;color:var(--navy);margin:0 0 6px}
+.sub{margin:0;font-size:13.5px;color:var(--sub)}.meta{font-size:12px;color:var(--sub);text-align:right}.meta b{color:var(--ink)}
+.filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:var(--navy);padding:12px 16px;border-radius:14px;margin-bottom:14px}
+.filtros label{font-size:12px;color:#C9D1E5;font-weight:700;display:flex;align-items:center;gap:8px}
+.filtros select{font:600 13px Inter,Arial,sans-serif;padding:7px 10px;border-radius:8px;border:1px solid #34497A;background:#1E2F55;color:#F7F4EC}
+.filtros .nota{margin-left:auto;font-size:11px;color:#9AA6C4}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi .l{font-size:11.5px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.kpi .v{font-size:34px;font-weight:800;color:var(--navy);letter-spacing:-.03em;line-height:1.1;margin-top:4px}
+.kpi .s{font-size:12px;color:var(--sub);margin-top:3px}.kpi.alto .v{color:var(--alto)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;min-width:0}
+.grid2 .panel{margin-bottom:0}
+.panel h2{font-size:15px;color:var(--navy);margin:0 0 2px}.panel .q{font-size:11.5px;color:var(--sub);margin:0 0 12px}
+.fila{display:grid;grid-template-columns:110px 1fr 120px;gap:10px;align-items:center;margin:9px 0;font-size:12.5px}
+.fila .lab{font-weight:700;text-align:right}.fila .num{color:var(--sub);font-weight:600}
+.track{height:22px;background:#F0EEE4;border-radius:5px;overflow:hidden;display:flex}.track i{display:block;height:100%}
+.leyenda{display:flex;gap:14px;font-size:11.5px;color:var(--sub);margin-top:8px}.leyenda span{display:flex;gap:5px;align-items:center}.leyenda b{width:10px;height:10px;border-radius:2px;display:inline-block}
+svg{width:100%;height:auto;display:block}svg text{font-family:Inter,Arial,sans-serif;fill:#5B6478;font-size:11px}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+th{text-align:left;color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:7px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line)}td.n{text-align:right;font-variant-numeric:tabular-nums}th.n{text-align:right}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;color:#fff}
+.badge.Alto{background:var(--alto)}.badge.Medio{background:#8A5A00}.badge.Bajo{background:#1F7A54}
+.ok{color:#1F7A54;font-weight:700}.no{color:var(--alto);font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.tile{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.tile b{display:block;font-size:24px;color:var(--navy);line-height:1.1}.tile span{font-size:11.5px;color:var(--sub)}
+.prog{height:9px;background:#E8E4D6;border-radius:9px;overflow:hidden;margin:0 0 14px}.prog span{display:block;height:100%;background:var(--navy)}
+.dv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.dv div{background:var(--cream);border:1px solid var(--line);border-left:6px solid var(--orange);border-radius:10px;padding:10px 12px;font-size:12.5px}.dv b{color:var(--navy)}.dv small{display:block;color:var(--sub);margin-top:4px}
+.shap .fila{grid-template-columns:150px 1fr 54px}.shap .track{height:14px}
+.est-Completado{color:#1F7A54;font-weight:700}.est-En-proceso{color:#8A5A00;font-weight:700}.est-Pendiente{color:var(--sub);font-weight:700}
+.vacio{color:var(--sub);font-size:13px;padding:14px 0;text-align:center}
+footer{font-size:11px;color:var(--sub);margin-top:6px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:1000px){.kpis,.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.dv{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.meta{text-align:left}}
+@media(max-width:640px){.shell{padding:16px 14px}h1{font-size:25px}.fila{grid-template-columns:84px 1fr 86px}.filtros .nota{margin-left:0}.kpi .v{font-size:27px}}
+@media print{body{background:#fff}.filtros{display:none}}
+</style></head><body><div class="shell" id="app">
+<header><div class="brand"><div class="logo">R</div><div><strong>RetailNova</strong><small>GESTIÓN DE PROYECTOS DE DATOS · SCY1102</small></div></div><span class="pill">PROTOTIPO · DATOS SINTÉTICOS</span></header>
+<section class="hero"><div><p class="eyebrow">DASHBOARD DE RIESGO · EP5</p><h1>Detectar el abandono antes de que ocurra</h1><p class="sub">Clientes frecuentes de los últimos 12 meses · modelo de clasificación de riesgo · priorización para el equipo comercial</p></div><div class="meta"><b>Fecha de corte:</b> <span id="corte"></span><br>Datos sintéticos (sin información personal real)</div></section>
+<section class="filtros" aria-label="Filtros">
+<label>Región <select id="fR"></select></label><label>Canal <select id="fC"></select></label><label>Riesgo <select id="fK"></select></label>
+<span class="nota">Región y canal filtran todo; Riesgo filtra histograma, dispersión y tabla.</span></section>
+<section class="kpis" aria-label="Indicadores">
+<div class="kpi"><div class="l">Clientes (12 meses)</div><div class="v" id="k1"></div><div class="s">Base sobre la que se mide todo</div></div>
+<div class="kpi"><div class="l">Tasa de abandono</div><div class="v" id="k2"></div><div class="s">Promedio de la etiqueta real</div></div>
+<div class="kpi alto"><div class="l">Clientes en riesgo Alto</div><div class="v" id="k3"></div><div class="s" id="k3s"></div></div>
+<div class="kpi"><div class="l">Monto en riesgo Alto</div><div class="v" id="k4"></div><div class="s">Compras acumuladas de esos clientes</div></div>
+</section>
+<section class="grid2">
+<div class="panel"><h2>Clientes por nivel de riesgo</h2><p class="q">¿Cuántos clientes hay en cada nivel?</p><div id="g1"></div></div>
+<div class="panel"><h2>Riesgo por región (% del total regional)</h2><p class="q">¿El riesgo se concentra en una región? (equidad, RNF6)</p><div id="g2"></div>
+<div class="leyenda"><span><b style="background:var(--bajo)"></b>Bajo</span><span><b style="background:var(--medio)"></b>Medio</span><span><b style="background:var(--alto)"></b>Alto</span></div></div>
+</section>
+<section class="grid2">
+<div class="panel"><h2>Distribución de la probabilidad de abandono</h2><p class="q">¿El modelo separa bien a los clientes? Línea punteada: umbral de decisión.</p><div id="g3"></div>
+<div class="leyenda"><span><b style="background:var(--bajo)"></b>Bajo</span><span><b style="background:var(--medio)"></b>Medio</span><span><b style="background:var(--alto)"></b>Alto</span></div></div>
+<div class="panel"><h2>Recencia vs. frecuencia de compra</h2><p class="q">¿Qué comportamiento hay detrás del riesgo? Muestra de <span id="nd"></span> clientes. La recencia no entra al modelo (fuga de datos).</p><div id="g4"></div>
+<div class="leyenda"><span><b style="background:var(--bajo)"></b>Bajo</span><span><b style="background:var(--medio)"></b>Medio</span><span><b style="background:var(--alto)"></b>Alto</span></div></div>
+</section>
+<section class="panel"><h2>Top 20 clientes por probabilidad de abandono</h2><p class="q">¿A quién contactamos primero? Con el filtro Riesgo = Alto se ven los 20 clientes más críticos.</p><div class="tablewrap" id="g5"></div></section>
+<section class="grid2">
+<div class="panel" id="pm"></div>
+<div class="panel"><div id="pr"></div><div class="shap" id="ps"></div></div>
+</section>
+<section class="panel" id="seg"></section>
+<footer><span>Fuente: retailnova_clientes_12m_scored.csv · lectura local en el navegador, sin envío de datos.</span><span>Las probabilidades no están calibradas como riesgo real; los resultados provienen de un escenario sintético.</span></footer>
+</div>
+<script>
+/*DATOS_START*/const DATOS = null;/*DATOS_END*/
+(function(){
+const D = DATOS;
+if(!D){document.getElementById('app').innerHTML='<p class="vacio">Sin datos: ejecuta <code>python main.py --proceso visualizar</code>.</p>';return;}
+const $=id=>document.getElementById(id);
+const NIV=['Alto','Medio','Bajo'], COL={Alto:'#C23B3B',Medio:'#F4A300',Bajo:'#2F9E6E'};
+const nf=new Intl.NumberFormat('es-CL');
+const fmt=n=>nf.format(Math.round(n));
+const dec=(x,d=1)=>Number(x).toFixed(d).replace('.',',');
+const pct=(x,d=1)=>dec(x*100,d)+' %';
+const mon=v=>'$'+Number(v/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const F={r:'Todas',c:'Todos',k:'Todos'};
+const okRC=x=>(F.r==='Todas'||x.r===F.r)&&(F.c==='Todos'||x.c===F.c);
+const okAll=x=>okRC(x)&&(F.k==='Todos'||x.k===F.k);
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(Math.max(v,1))));const m=v/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p;}
+
+function opciones(id,todas,lista){$(id).innerHTML=['<option>'+todas+'</option>'].concat(lista.map(x=>'<option>'+esc(x)+'</option>')).join('');}
+$('corte').textContent=D.meta.corte;$('nd').textContent=fmt(D.meta.n_dispersion);
+opciones('fR','Todas',D.meta.regiones);opciones('fC','Todos',D.meta.canales);opciones('fK','Todos',NIV);
+$('fR').onchange=e=>{F.r=e.target.value;render();};$('fC').onchange=e=>{F.c=e.target.value;render();};$('fK').onchange=e=>{F.k=e.target.value;render();};
+
+function kpis(){
+  const c=D.cubo.filter(okRC), tot=sum(c,x=>x.n), ab=sum(c,x=>x.ab);
+  const alto=c.filter(x=>x.k==='Alto'), nA=sum(alto,x=>x.n);
+  $('k1').textContent=fmt(tot);$('k2').textContent=tot?pct(ab/tot):'—';
+  $('k3').textContent=fmt(nA);$('k3s').textContent=tot?pct(nA/tot)+' de la base':'—';
+  $('k4').textContent=mon(sum(alto,x=>x.monto));
+}
+function barrasRiesgo(){
+  const c=D.cubo.filter(okRC), n={};NIV.forEach(k=>n[k]=sum(c.filter(x=>x.k===k),x=>x.n));
+  const mx=Math.max(1,...NIV.map(k=>n[k]));
+  $('g1').innerHTML=NIV.map(k=>'<div class="fila"><div class="lab">'+k+'</div><div class="track"><i style="width:'+(n[k]/mx*100)+'%;background:'+COL[k]+'"></i></div><div class="num">'+fmt(n[k])+'</div></div>').join('');
+}
+function barrasRegion(){
+  $('g2').innerHTML=D.meta.regiones.map(r=>{
+    const c=D.cubo.filter(x=>x.r===r&&(F.c==='Todos'||x.c===F.c)), tot=sum(c,x=>x.n)||1;
+    const p=k=>sum(c.filter(x=>x.k===k),x=>x.n)/tot*100;
+    return '<div class="fila"><div class="lab">'+esc(r)+'</div><div class="track">'+['Bajo','Medio','Alto'].map(k=>'<i style="width:'+p(k)+'%;background:'+COL[k]+'"></i>').join('')+'</div><div class="num">'+dec(p('Alto'))+' % Alto</div></div>';
+  }).join('');
+}
+function histograma(){
+  const nb=D.meta.n_bins, A={Alto:Array(nb).fill(0),Medio:Array(nb).fill(0),Bajo:Array(nb).fill(0)};
+  D.hist.filter(okAll).forEach(h=>h.h.forEach((v,i)=>A[h.k][i]+=v));
+  const tot=Array.from({length:nb},(_,i)=>NIV.reduce((s,k)=>s+A[k][i],0));
+  if(!Math.max(...tot)){$('g3').innerHTML='<p class="vacio">Sin clientes con esos filtros.</p>';return;}
+  const ym=niceMax(Math.max(...tot)),W=640,H=250,L=54,R=10,T=12,B=34,iw=W-L-R,ih=H-T-B,bw=iw/nb;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Histograma de probabilidad de abandono">';
+  for(let t=0;t<=4;t++){const y=T+ih-ih*t/4;s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#E3DFD2"/><text x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+fmt(ym*t/4)+'</text>';}
+  for(let i=0;i<nb;i++){let y=T+ih;['Bajo','Medio','Alto'].forEach(k=>{const h=A[k][i]/ym*ih;if(h>0){y-=h;s+='<rect x="'+(L+i*bw+1)+'" y="'+y+'" width="'+(bw-2)+'" height="'+h+'" fill="'+COL[k]+'"/>';}});}
+  for(let t=0;t<=5;t++){const x=L+iw*t/5;s+='<text x="'+x+'" y="'+(H-14)+'" text-anchor="middle">'+dec(t/5,1)+'</text>';}
+  s+='<text x="'+(L+iw/2)+'" y="'+(H-1)+'" text-anchor="middle">Probabilidad de abandono</text>';
+  if(D.meta.umbral!=null){const x=L+D.meta.umbral*iw;s+='<line x1="'+x+'" x2="'+x+'" y1="'+T+'" y2="'+(T+ih)+'" stroke="#14213D" stroke-width="1.6" stroke-dasharray="5,4"/><text x="'+(x-4)+'" y="'+(T+10)+'" text-anchor="end" style="fill:#14213D;font-weight:700">Umbral '+dec(D.meta.umbral,2)+'</text>';}
+  $('g3').innerHTML=s+'</svg>';
+}
+function dispersion(){
+  const p=D.dispersion.filter(okAll);
+  if(!p.length){$('g4').innerHTML='<p class="vacio">Sin clientes con esos filtros.</p>';return;}
+  const xm=Math.max(50,Math.ceil(Math.max(...p.map(d=>d.x))/50)*50), ym=Math.max(1,Math.ceil(Math.max(...p.map(d=>d.y))));
+  const W=640,H=250,L=44,R=10,T=12,B=34,iw=W-L-R,ih=H-T-B;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dispersión recencia vs frecuencia">';
+  for(let t=0;t<=ym;t++){const y=T+ih-ih*t/ym;s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#E3DFD2"/><text x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+t+'</text>';}
+  for(let v=0;v<=xm;v+=50){const x=L+iw*v/xm;s+='<text x="'+x+'" y="'+(H-14)+'" text-anchor="middle">'+v+'</text>';}
+  s+='<text x="'+(L+iw/2)+'" y="'+(H-1)+'" text-anchor="middle">Recencia (días desde la última compra)</text>';
+  p.forEach(d=>{s+='<circle cx="'+(L+iw*d.x/xm).toFixed(1)+'" cy="'+(T+ih-ih*d.y/ym).toFixed(1)+'" r="3.1" fill="'+COL[d.k]+'" fill-opacity=".6"/>';});
+  if(180<=xm){const x=L+iw*180/xm;s+='<line x1="'+x+'" x2="'+x+'" y1="'+T+'" y2="'+(T+ih)+'" stroke="#14213D" stroke-width="1.4" stroke-dasharray="5,4"/><text x="'+(x+4)+'" y="'+(T+10)+'" style="fill:#14213D;font-weight:700">180 días</text>';}
+  $('g4').innerHTML=s+'</svg>';
+}
+function tabla(){
+  const t=D.top.filter(okAll).sort((a,b)=>b.p-a.p).slice(0,20);
+  if(!t.length){$('g5').innerHTML='<p class="vacio">Sin clientes con esos filtros.</p>';return;}
+  $('g5').innerHTML='<table><tr><th>#</th><th>ID cliente</th><th>Región</th><th>Canal</th><th class="n">Prob. abandono</th><th class="n">Recencia (d)</th><th class="n">Monto acumulado</th><th>Riesgo</th></tr>'+
+    t.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.id)+'</td><td>'+esc(x.r)+'</td><td>'+esc(x.c)+'</td><td class="n">'+dec(x.p*100,1)+' %</td><td class="n">'+fmt(x.rec)+'</td><td class="n">$'+fmt(x.m)+'</td><td><span class="badge '+x.k+'">'+x.k+'</span></td></tr>').join('')+'</table>';
+}
+function panelModelo(){
+  const m=D.modelo;
+  if(!m){$('pm').innerHTML='<h2>Resultados del modelo</h2><p class="vacio">Ejecuta <code>--proceso entrenar</code> y <code>--proceso evaluar</code>.</p>';return;}
+  const t=m.test, cv=Object.entries(m.auc_cv).map(([n,v])=>esc(n)+' '+dec(v[0],3)).join(' · ');
+  $('pm').innerHTML='<h2>Resultados del modelo (conjunto de prueba)</h2><p class="q">Modelo elegido: <b>'+esc(m.nombre)+'</b> · AUC en validación cruzada: '+cv+'</p>'+
+   '<table style="min-width:0"><tr><th>Métrica</th><th class="n">Valor</th></tr>'+
+   '<tr><td>ROC-AUC</td><td class="n">'+dec(t.ROC_AUC,3)+'</td></tr><tr><td>PR-AUC</td><td class="n">'+dec(t.PR_AUC,3)+'</td></tr>'+
+   '<tr><td>Recall (meta del plan: '+pct(m.meta_recall,0)+')</td><td class="n '+(m.cumple?'ok':'no')+'">'+pct(t.Recall)+(m.cumple?' · cumple':' · no cumple')+'</td></tr>'+
+   '<tr><td>Precisión</td><td class="n">'+pct(t['Precisión'])+'</td></tr><tr><td>F1</td><td class="n">'+dec(t.F1,3)+'</td></tr>'+
+   '<tr><td>Alertas generadas (prueba)</td><td class="n">'+fmt(t['Alertas generadas'])+'</td></tr></table>';
+}
+function panelRegional(){
+  const r=D.regional;
+  $('pr').innerHTML='<h2>Equidad regional (RNF6) y explicabilidad</h2><p class="q">Brecha de F1 por región respecto del F1 global (límite: 10 %).</p>'+(r?
+   '<table style="min-width:0"><tr><th>Región</th><th class="n">F1</th><th class="n">Brecha</th><th>RNF6</th></tr>'+r.map(x=>'<tr><td>'+esc(x['Región'])+'</td><td class="n">'+dec(x.F1,3)+'</td><td class="n">'+dec(x['Diferencia vs. F1 general (%)'],1)+' %</td><td class="'+(x['¿Cumple RNF6 (<10%)?']==='Sí'?'ok':'no')+'">'+(x['¿Cumple RNF6 (<10%)?']==='Sí'?'Cumple':'No cumple')+'</td></tr>').join('')+'</table>':'<p class="vacio">Sin evaluación regional.</p>');
+  const s=D.shap;
+  $('ps').innerHTML=s?'<p class="q" style="margin-top:14px">Variables que más empujan el riesgo (SHAP, impacto medio absoluto)</p>'+(function(){const mx=Math.max(...s.map(v=>v.impacto_medio_abs));return s.map(v=>'<div class="fila"><div class="lab" style="text-align:left">'+esc(v.variable)+'</div><div class="track"><i style="width:'+(v.impacto_medio_abs/mx*100)+'%;background:#14213D"></i></div><div class="num">'+dec(v.impacto_medio_abs,2)+'</div></div>').join('');})():'';
+}
+function seguimiento(){
+  const s=D.seguimiento;
+  if(!s){$('seg').innerHTML='<h2>Seguimiento del proyecto</h2><p class="vacio">Sin archivo de seguimiento.</p>';return;}
+  const r=s.resumen;
+  $('seg').innerHTML='<h2>Gestión y control del proyecto</h2><p class="q">'+esc(s.curso)+' · corte '+esc(s.fecha_corte)+'. Tareas del WBS: planificado vs. ejecutado.</p>'+
+   '<div class="tiles"><div class="tile"><b>'+r.total+'</b><span>tareas planificadas</span></div><div class="tile"><b>'+r.completadas+'</b><span>completadas ('+dec(r.avance_pct,0)+' %)</span></div><div class="tile"><b>'+r.en_proceso+'</b><span>en proceso</span></div><div class="tile"><b>'+r.desviaciones+'</b><span>desviaciones registradas</span></div></div>'+
+   '<div class="prog"><span style="width:'+r.avance_pct+'%"></span></div>'+
+   '<div class="tablewrap"><table><tr><th>ID</th><th>Tarea</th><th>Responsable</th><th>Planificado</th><th>Ejecutado</th><th>Estado</th><th>Evidencia</th></tr>'+
+   s.tareas.map(t=>'<tr><td>'+esc(t.id)+'</td><td>'+esc(t.titulo)+'</td><td>'+esc(t.responsable)+'</td><td>'+esc(t.planificado)+'</td><td>'+esc(t.ejecutado)+'</td><td class="est-'+esc(t.estado).replace(' ','-')+'">'+esc(t.estado)+'</td><td>'+esc(t.evidencia||'')+'</td></tr>').join('')+'</table></div>'+
+   '<div class="dv">'+(s.desviaciones||[]).map(d=>'<div><b>'+esc(d.id)+' · '+esc(d.tipo)+'</b><br>'+esc(d.descripcion)+'<small><b>Acción:</b> '+esc(d.accion)+'</small></div>').join('')+'</div>';
+}
+function render(){kpis();barrasRiesgo();barrasRegion();histograma();dispersion();tabla();}
+render();panelModelo();panelRegional();seguimiento();
+})();
+</script></body></html>

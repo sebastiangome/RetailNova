@@ -1,185 +1,169 @@
-"""Modelado supervisado LOGISMART (H4-T1).
+"""Modelamiento: selección por validación cruzada, umbral OOF y entrenamiento final.
 
-Usa data/processed/logismart_modelado.csv creado por src.pipeline_datos.
-La partición es temporal: train antes de julio de 2026, validación julio,
-prueba agosto y septiembre. Se seleccionan modelo y umbral SOLO con validación.
+Metodología (evita sobreestimar el desempeño):
+1. El modelo se elige con validación cruzada estratificada de 5 folds SOLO sobre el
+   conjunto de entrenamiento.
+2. Ante un empate técnico (< 0,01 de AUC) se prefiere la Regresión Logística, más
+   simple y explicable (RF4/RNF4 del plan).
+3. El umbral de decisión se fija con predicciones fuera de muestra (OOF) del
+   entrenamiento: el umbral más alto que aún logra recall >= 75 %.
+4. El conjunto de prueba no se toca aquí; se evalúa una sola vez en `evaluacion.py`.
 """
 from __future__ import annotations
 
-import argparse
 import json
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.base import clone
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    average_precision_score, confusion_matrix, f1_score,
-    precision_score, recall_score, roc_auc_score,
-)
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_recall_curve, precision_score, recall_score
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.pipeline_datos import (
-    CATEGORICAS, FECHA, NUMERICAS, OBJETIVO, PROHIBIDAS,
-    construir_preprocesador,
-)
-
-FEATURES = NUMERICAS + CATEGORICAS
+from src import config as cfg
 
 
-def dividir_temporalmente(df: pd.DataFrame):
-    """Devuelve train/val/test cronológicos sin mezclar registros de otros períodos."""
-    df = df.copy()
-    df[FECHA] = pd.to_datetime(df[FECHA], errors="raise")
-    train = df.loc[df[FECHA] < "2026-07-01"].copy()
-    val = df.loc[df[FECHA].between("2026-07-01", "2026-07-31")].copy()
-    test = df.loc[df[FECHA].between("2026-08-01", "2026-09-30")].copy()
-    if not all(len(s) for s in (train, val, test)):
-        raise ValueError("Uno de los períodos train/val/test está vacío")
-    if len(train) + len(val) + len(test) != len(df):
-        raise ValueError("Existen fechas fuera de los períodos definidos")
-    return train, val, test
+def construir_preprocesador() -> ColumnTransformer:
+    return ColumnTransformer(transformers=[
+        ("num", StandardScaler(), cfg.FEATURES_NUMERICAS),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), cfg.FEATURES_CATEGORICAS),
+    ])
 
 
-def separar_xy(df: pd.DataFrame):
-    """Separa predictores X de la variable objetivo y, preservando índices."""
-    if set(PROHIBIDAS) & set(FEATURES):
-        raise AssertionError("Se ha incluido una variable prohibida en FEATURES")
-    faltan = set(FEATURES + [OBJETIVO]) - set(df.columns)
-    if faltan:
-        raise ValueError(f"Columnas no presentes: {sorted(faltan)}")
-    X = df.loc[:, FEATURES].copy()
-    y = df[OBJETIVO].astype(int).copy()
-    if not y.isin([0, 1]).all():
-        raise ValueError("La variable objetivo debe ser binaria")
-    return X, y
+def dividir_datos(df: pd.DataFrame, semilla: int = cfg.SEMILLA):
+    """Partición estratificada 80/20. Devuelve X_train, X_test, y_train, y_test, region_train, region_test."""
+    if cfg.VARIABLE_FUGA in cfg.FEATURES_NUMERICAS:
+        raise ValueError(f"{cfg.VARIABLE_FUGA} provoca fuga de datos y no puede ser predictora")
+    X = df[cfg.FEATURES_NUMERICAS + cfg.FEATURES_CATEGORICAS].copy()
+    return train_test_split(X, df["abandono"].copy(), df["region"].copy(),
+                            test_size=0.2, random_state=semilla, stratify=df["abandono"])
 
 
-def metricas(y, probabilidades, umbral=0.5):
-    pred = (probabilidades >= umbral).astype(int)
+def modelos_candidatos(semilla: int = cfg.SEMILLA) -> dict:
     return {
-        "roc_auc": float(roc_auc_score(y, probabilidades)),
-        "pr_auc": float(average_precision_score(y, probabilidades)),
-        "precision": float(precision_score(y, pred, zero_division=0)),
-        "recall": float(recall_score(y, pred, zero_division=0)),
-        "f1": float(f1_score(y, pred, zero_division=0)),
-        "matriz_confusion": confusion_matrix(y, pred, labels=[0, 1]).tolist(),
-        "tasa_retraso_real": float(np.mean(y)),
-        "tasa_alertas": float(np.mean(pred)),
-        "umbral": float(umbral),
-    }
-
-
-def elegir_umbral(y_val, prob_val):
-    """Elige umbral por F1 de VALIDACIÓN; nunca consulta el conjunto test."""
-    candidatos = np.arange(0.10, 0.91, 0.05)
-    f1 = [f1_score(y_val, prob_val >= u, zero_division=0) for u in candidatos]
-    return float(candidatos[int(np.argmax(f1))])
-
-
-def muestrear(df, limite, semilla=42):
-    """Muestreo por período, exclusivamente para pruebas rápidas."""
-    if limite is None or len(df) <= limite:
-        return df
-    return df.sample(n=limite, random_state=semilla).sort_values(FECHA)
-
-
-def entrenar(
-    entrada="data/processed/logismart_modelado.csv",
-    salida="models",
-    modo_rapido=False,
-    semilla=42,
-):
-    """Compara dos modelos con validación, evalúa ganador una vez en test y guarda evidencia."""
-    entrada = Path(entrada)
-    if not entrada.is_file():
-        raise FileNotFoundError(f"No existe {entrada}. Ejecuta primero el pipeline de preparación.")
-    df = pd.read_csv(entrada, parse_dates=[FECHA])
-    train, val, test = dividir_temporalmente(df)
-    conteos_completos = {"train": len(train), "validacion": len(val), "test": len(test)}
-
-    if modo_rapido:
-        train = muestrear(train, 40_000, semilla)
-        val = muestrear(val, 10_000, semilla)
-        test = muestrear(test, 15_000, semilla)
-
-    X_train, y_train = separar_xy(train)
-    X_val, y_val = separar_xy(val)
-    X_test, y_test = separar_xy(test)
-    modelos = {
+        cfg.MODELO_SIMPLE: LogisticRegression(max_iter=1000, class_weight="balanced", random_state=semilla),
         "Random Forest": RandomForestClassifier(
-            n_estimators=120 if not modo_rapido else 60,
-            max_depth=14, min_samples_leaf=8, max_samples=0.40,
-            n_jobs=-1, random_state=semilla,
-        ),
+            n_estimators=300, max_depth=10, min_samples_leaf=20,
+            class_weight="balanced", random_state=semilla, n_jobs=-1),
     }
-    try:
-        from xgboost import XGBClassifier
-        modelos["XGBoost"] = XGBClassifier(
-            n_estimators=200 if not modo_rapido else 80,
-            max_depth=5, learning_rate=0.06, subsample=0.8,
-            colsample_bytree=0.85, tree_method="hist", n_jobs=4,
-            random_state=semilla, eval_metric="logloss",
-        )
-    except ImportError as exc:
-        raise ImportError("Instala xgboost desde requirements.txt para comparar ambos modelos") from exc
 
-    evaluaciones = {}
-    pipelines = {}
-    for nombre, clasificador in modelos.items():
-        pipeline = Pipeline([
-            ("preprocesador", clone(construir_preprocesador())),
-            ("modelo", clasificador),
-        ])
-        pipeline.fit(X_train, y_train)  # imputer y one-hot aprendidos SOLO con train
-        p_val = pipeline.predict_proba(X_val)[:, 1]
-        evaluaciones[nombre] = metricas(y_val, p_val)
-        pipelines[nombre] = pipeline
-        print(f"Validación {nombre}: ROC-AUC {evaluaciones[nombre]['roc_auc']:.4f} "
-              f"| PR-AUC {evaluaciones[nombre]['pr_auc']:.4f}")
 
-    # PR-AUC desempata en caso de ROC-AUC igual.
-    ganador = max(evaluaciones, key=lambda k: (evaluaciones[k]["roc_auc"], evaluaciones[k]["pr_auc"]))
-    elegido = pipelines[ganador]
-    umbral = elegir_umbral(y_val, elegido.predict_proba(X_val)[:, 1])
-    p_test = elegido.predict_proba(X_test)[:, 1]
-    resultado_test = metricas(y_test, p_test, umbral=umbral)
+def validacion_cruzada(semilla: int = cfg.SEMILLA) -> StratifiedKFold:
+    return StratifiedKFold(n_splits=5, shuffle=True, random_state=semilla)
 
-    # En H4-T1 no se reentrena sobre validación: guardamos exactamente el pipeline evaluado.
-    salida = Path(salida)
-    salida.mkdir(parents=True, exist_ok=True)
-    archivo_modelo = salida / "modelo_logismart.joblib"
-    joblib.dump(elegido, archivo_modelo)
-    resumen = {
-        "nota": "Datos sintéticos: estas métricas no son rendimiento operativo real.",
-        "modo_rapido": bool(modo_rapido),
-        "periodos": {"train": "2025-08 a 2026-06", "validacion": "2026-07", "test": "2026-08 a 2026-09"},
-        "filas_por_periodo_dataset": conteos_completos,
-        "filas_utilizadas": {"train": len(train), "validacion": len(val), "test": len(test)},
-        "resultados_validacion_umbral_0_5": evaluaciones,
-        "modelo_elegido": ganador,
-        "umbral_elegido_en_validacion": umbral,
-        "resultado_test": resultado_test,
-        "archivo_modelo": str(archivo_modelo),
+
+def comparar_modelos_cv(X_train, y_train, modelos: dict | None = None, cv=None):
+    """Compara los modelos con CV sobre entrenamiento. Devuelve (folds_df, comparacion_df)."""
+    modelos = modelos or modelos_candidatos()
+    cv = cv or validacion_cruzada()
+    filas_folds, filas_cv = [], []
+    for nombre, modelo in modelos.items():
+        pipe = Pipeline([("prep", construir_preprocesador()), ("modelo", modelo)])
+        s = cross_validate(pipe, X_train, y_train, cv=cv, n_jobs=1,
+                           scoring={"auc": "roc_auc", "f1": "f1", "recall": "recall"})
+        for fold in range(cv.get_n_splits()):
+            filas_folds.append({"Modelo": nombre, "Fold": fold + 1, "ROC_AUC": s["test_auc"][fold],
+                                "F1_umbral_0.5": s["test_f1"][fold],
+                                "Recall_umbral_0.5": s["test_recall"][fold]})
+        filas_cv.append({"Modelo": nombre, "ROC_AUC_CV": s["test_auc"].mean(),
+                         "ROC_AUC_std": s["test_auc"].std(), "F1_CV_0.5": s["test_f1"].mean(),
+                         "Recall_CV_0.5": s["test_recall"].mean()})
+    comparacion = pd.DataFrame(filas_cv).sort_values("ROC_AUC_CV", ascending=False).reset_index(drop=True)
+    return pd.DataFrame(filas_folds), comparacion
+
+
+def elegir_modelo(comparacion: pd.DataFrame) -> str:
+    """Mejor AUC de CV; si la diferencia con el segundo es < 0,01, el modelo simple."""
+    mejor = comparacion.iloc[0]["Modelo"]
+    if len(comparacion) > 1:
+        brecha = comparacion.iloc[0]["ROC_AUC_CV"] - comparacion.iloc[1]["ROC_AUC_CV"]
+        if brecha < cfg.DIFERENCIA_AUC_EMPATE and cfg.MODELO_SIMPLE in set(comparacion["Modelo"]):
+            return cfg.MODELO_SIMPLE
+    return mejor
+
+
+def seleccionar_umbral_oof(proba_oof: np.ndarray, y_train, recall_objetivo: float = cfg.RECALL_OOF_OBJETIVO):
+    """Umbral más alto con recall OOF >= objetivo. Si ninguno alcanza, usa 0,5."""
+    precision, recall, umbrales = precision_recall_curve(y_train, proba_oof)
+    candidatos = np.where(recall[:-1] >= recall_objetivo)[0]
+    return float(umbrales[candidatos[-1]]) if len(candidatos) else 0.5
+
+
+def entrenar(df: pd.DataFrame, carpeta_resultados: Path = cfg.RESULTADOS / "modelado",
+             ruta_modelo: Path = cfg.MODELO_JOBLIB, carpeta_graficos: Path = cfg.GRAFICOS) -> dict:
+    """Proceso `entrenar`: CV → modelo elegido → umbral OOF → ajuste final → guardado."""
+    carpeta_resultados, carpeta_graficos = Path(carpeta_resultados), Path(carpeta_graficos)
+    carpeta_resultados.mkdir(parents=True, exist_ok=True)
+    X_train, _, y_train, _, _, _ = dividir_datos(df)
+
+    folds, comparacion = comparar_modelos_cv(X_train, y_train)
+    folds.to_csv(carpeta_resultados / "validacion_cruzada_5_folds.csv", index=False)
+    comparacion.to_csv(carpeta_resultados / "comparacion_cv.csv", index=False)
+    print(comparacion.round(4).to_string(index=False))
+
+    nombre = elegir_modelo(comparacion)
+    print(f"\nModelo elegido ANTES de tocar el conjunto de prueba: {nombre}")
+
+    modelo = modelos_candidatos()[nombre]
+    pipe = Pipeline([("prep", construir_preprocesador()), ("modelo", modelo)])
+    proba_oof = cross_val_predict(pipe, X_train, y_train, cv=validacion_cruzada(),
+                                  method="predict_proba", n_jobs=1)[:, 1]
+    umbral = seleccionar_umbral_oof(proba_oof, y_train)
+    pred_oof = proba_oof >= umbral
+    seleccion = {
+        "modelo": nombre,
+        "umbral_decision": umbral,
+        "recall_oof": float(recall_score(y_train, pred_oof)),
+        "precision_oof": float(precision_score(y_train, pred_oof, zero_division=0)),
+        "auc_cv": {r["Modelo"]: [float(r["ROC_AUC_CV"]), float(r["ROC_AUC_std"])]
+                   for _, r in comparacion.iterrows()},
+        "n_entrenamiento": int(len(X_train)),
     }
-    resultados_dir = Path("output/resultados/modelado")
-    resultados_dir.mkdir(parents=True, exist_ok=True)
-    archivo_resultados = resultados_dir / "resultados_modelado.json"
-    archivo_resultados.write_text(json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Ganador por validación: {ganador} | umbral: {umbral:.2f}")
-    print(f"Test final: ROC-AUC {resultado_test['roc_auc']:.4f} "
-          f"| PR-AUC {resultado_test['pr_auc']:.4f} "
-          f"| recall {resultado_test['recall']:.4f} | F1 {resultado_test['f1']:.4f}")
-    print(f"Guardado: {archivo_modelo} y {archivo_resultados}")
-    return resumen
+    print(f"Umbral OOF = {umbral:.4f} · recall OOF {seleccion['recall_oof']:.3f} · "
+          f"precisión OOF {seleccion['precision_oof']:.3f}")
+
+    pipe.fit(X_train, y_train)
+    ruta_modelo = Path(ruta_modelo)
+    ruta_modelo.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(pipe, ruta_modelo)
+    (carpeta_resultados / "seleccion_modelo.json").write_text(
+        json.dumps(seleccion, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    _grafico_umbral(y_train, proba_oof, carpeta_graficos)
+    return seleccion
 
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Modelado predictivo de LOGISMART")
-    ap.add_argument("--entrada", default="data/processed/logismart_modelado.csv")
-    ap.add_argument("--salida", default="models")
-    ap.add_argument("--modo-rapido", action="store_true")
-    args = ap.parse_args()
-    entrenar(args.entrada, args.salida, args.modo_rapido)
+def _grafico_umbral(y_train, proba_oof, carpeta: Path) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    precision, recall, _ = precision_recall_curve(y_train, proba_oof)
+    Path(carpeta).mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(7, 4))
+    plt.plot(recall, precision, color="#F4A300", label="Precisión–Recall (OOF, entrenamiento)")
+    plt.axvline(cfg.META_RECALL, linestyle="--", color="gray", label="Meta de recall del plan (70%)")
+    plt.xlabel("Recall")
+    plt.ylabel("Precisión")
+    plt.title("Selección de umbral sobre datos de entrenamiento (OOF)")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(Path(carpeta) / "curva_pr_entrenamiento.png", dpi=130)
+    plt.close()
+
+
+def cargar_modelo(ruta: Path = cfg.MODELO_JOBLIB):
+    if not Path(ruta).is_file():
+        raise FileNotFoundError(f"No existe {ruta}; ejecuta primero --proceso entrenar")
+    return joblib.load(ruta)
+
+
+def cargar_seleccion(carpeta: Path = cfg.RESULTADOS / "modelado") -> dict:
+    ruta = Path(carpeta) / "seleccion_modelo.json"
+    if not ruta.is_file():
+        raise FileNotFoundError(f"No existe {ruta}; ejecuta primero --proceso entrenar")
+    return json.loads(ruta.read_text(encoding="utf-8"))

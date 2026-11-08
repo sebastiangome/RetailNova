@@ -1,0 +1,7 @@
+{
+  "clientes": 51346,
+  "tasa_abandono": 0.2399992209714486,
+  "riesgo_alto": 5135,
+  "monto_riesgo_alto": 606079000.0,
+  "umbral_decision": 0.641514988628949
+}
