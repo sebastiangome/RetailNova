@@ -1,0 +1,153 @@
+{
+  "nota": "Datos sintéticos. SHAP explica el modelo, no demuestra causalidad ni impacto real.",
+  "modelo": "XGBoost",
+  "conjunto_explicado": "validacion (julio 2026)",
+  "numero_operaciones": 500,
+  "semilla_muestreo": 42,
+  "escala_shap": "log-odds / margen bruto de XGBoost; NO puntos porcentuales de probabilidad",
+  "agrupacion": "SHAP de indicadores one-hot e indicadores de nulos sumados por predictor original",
+  "importancia_global_media_abs_shap": [
+    {
+      "variable": "es_hora_punta",
+      "valor": 0.4753935933113098
+    },
+    {
+      "variable": "mes",
+      "valor": 0.3585694432258606
+    },
+    {
+      "variable": "duracion_estimada_min",
+      "valor": 0.23148508369922638
+    },
+    {
+      "variable": "comuna_destino",
+      "valor": 0.1709585338830948
+    },
+    {
+      "variable": "experiencia_conductor_anios",
+      "valor": 0.14072760939598083
+    },
+    {
+      "variable": "distancia_km",
+      "valor": 0.11946290731430054
+    },
+    {
+      "variable": "tipo_vehiculo",
+      "valor": 0.0979243591427803
+    },
+    {
+      "variable": "dia_semana",
+      "valor": 0.0791473537683487
+    },
+    {
+      "variable": "franja_horaria",
+      "valor": 0.04994573816657066
+    },
+    {
+      "variable": "n_paquetes",
+      "valor": 0.03962705284357071
+    },
+    {
+      "variable": "hora_programada",
+      "valor": 0.021383875980973244
+    },
+    {
+      "variable": "n_paradas",
+      "valor": 0.009957322850823402
+    },
+    {
+      "variable": "peso_kg",
+      "valor": 0.008173614740371704
+    },
+    {
+      "variable": "paquetes_por_parada",
+      "valor": 0.006424278952181339
+    },
+    {
+      "variable": "volumen_m3",
+      "valor": 0.005908425431698561
+    },
+    {
+      "variable": "comuna_origen",
+      "valor": 0.0032101874239742756
+    },
+    {
+      "variable": "es_fin_de_semana",
+      "valor": 0.0017868125578388572
+    }
+  ],
+  "ejemplo_local": {
+    "posicion_en_muestra": 206,
+    "probabilidad_predicha": 0.6035339832305908,
+    "base_value": -2.3444075735678567,
+    "top_atribuciones_por_variable": [
+      {
+        "variable": "duracion_estimada_min",
+        "shap": 0.692097544670105
+      },
+      {
+        "variable": "es_hora_punta",
+        "shap": 0.5780287384986877
+      },
+      {
+        "variable": "distancia_km",
+        "shap": 0.33733028173446655
+      },
+      {
+        "variable": "mes",
+        "shap": 0.3327675759792328
+      },
+      {
+        "variable": "comuna_destino",
+        "shap": 0.28877294063568115
+      },
+      {
+        "variable": "dia_semana",
+        "shap": 0.2617746889591217
+      },
+      {
+        "variable": "experiencia_conductor_anios",
+        "shap": 0.24548207223415375
+      },
+      {
+        "variable": "tipo_vehiculo",
+        "shap": -0.0907268226146698
+      },
+      {
+        "variable": "n_paquetes",
+        "shap": 0.04299401864409447
+      },
+      {
+        "variable": "franja_horaria",
+        "shap": 0.03134487569332123
+      },
+      {
+        "variable": "hora_programada",
+        "shap": 0.01965031772851944
+      },
+      {
+        "variable": "comuna_origen",
+        "shap": 0.014383727684617043
+      }
+    ],
+    "valores_originales": {
+      "es_hora_punta": 1,
+      "mes": 7,
+      "duracion_estimada_min": 154.0,
+      "comuna_destino": "Santiago",
+      "experiencia_conductor_anios": 0.9,
+      "distancia_km": 34.8,
+      "tipo_vehiculo": "Camioneta",
+      "dia_semana": 4,
+      "franja_horaria": "cierre",
+      "n_paquetes": 19,
+      "hora_programada": 17,
+      "n_paradas": 14
+    }
+  },
+  "artefactos": {
+    "barras_globales": "output/graficos/importancia_shap.png",
+    "beeswarm": "output/graficos/beeswarm_shap.png",
+    "waterfall": "output/graficos/waterfall_shap.png"
+  }
+}
