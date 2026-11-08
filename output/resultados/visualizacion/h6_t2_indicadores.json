@@ -1,0 +1,63 @@
+{
+  "tarea": "H6-T2",
+  "tipo": "prototipo_visual_local",
+  "formato_definitivo": "dashboard_html_autocontenido",
+  "corrida_h6_t1": "20261104T170000050763Z_a51e87",
+  "origen": "predicciones históricas sintéticas, incluyen train/val/test; inferencia sin etiquetas",
+  "indicadores": {
+    "operaciones": 1050000,
+    "alertas": 161875,
+    "tasa_alertas": 0.15416666666666667,
+    "umbral_oficial": 0.15000000000000002,
+    "probabilidad_media": 0.08914175711740953,
+    "probabilidad_minima": 0.00683802,
+    "probabilidad_maxima": 0.88621801,
+    "casos_ambiguos_por_redondeo_en_umbral": 0
+  },
+  "niveles_riesgo": [
+    {
+      "nivel": "Bajo",
+      "operaciones": 720979,
+      "porcentaje": 68.66466666666666
+    },
+    {
+      "nivel": "Observación",
+      "operaciones": 167146,
+      "porcentaje": 15.918666666666667
+    },
+    {
+      "nivel": "Prioritario",
+      "operaciones": 161875,
+      "porcentaje": 15.416666666666668
+    }
+  ],
+  "escenarios": [
+    {
+      "escenario": "Mayor cobertura",
+      "umbral": 0.1,
+      "alertas": 329021,
+      "porcentaje_operaciones": 31.33533333333333
+    },
+    {
+      "escenario": "Umbral oficial",
+      "umbral": 0.15000000000000002,
+      "alertas": 161875,
+      "porcentaje_operaciones": 15.416666666666668
+    },
+    {
+      "escenario": "Menos alertas",
+      "umbral": 0.2,
+      "alertas": 78166,
+      "porcentaje_operaciones": 7.4443809523809525
+    }
+  ],
+  "alcance": "Cantidad de alertas y prioridades, NO métricas de exactitud ni impacto operativo",
+  "limitaciones": [
+    "Datos sintéticos, no representan operación real en vivo",
+    "Las predicciones incluyen períodos de entrenamiento; no interpretar como precisión fuera de muestra",
+    "Las probabilidades no están certificadas como calibradas para riesgo real",
+    "Las alertas no demuestran que se hayan evitado retrasos",
+    "No existe dotación confirmada para atender los casos prioritarios",
+    "El entregable funcional es el dashboard HTML (dashboard/index.html)"
+  ]
+}

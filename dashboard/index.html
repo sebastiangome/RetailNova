@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>LOGISMART — Dashboard ejecutivo EV3</title>
+<style>
+:root{--navy:#11283a;--ink:#183248;--muted:#647586;--line:#dae5ed;--teal:#138c8c;--teal2:#38bbb7;--gold:#e8ae30;--orange:#dc734a;--blue:#6298d3;--soft:#f4f8fa;--white:#fff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,#f2f7fa,#eaf2f5);font-size:15px;line-height:1.45}
+.shell{max-width:1450px;padding:28px 35px 19px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+.brand{display:flex;gap:11px;align-items:center}.logo{width:39px;height:39px;border-radius:11px;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:21px;font-weight:900;letter-spacing:-3px;padding-right:4px;box-shadow:0 7px 18px #1531481f}
+.brand strong{font-size:20px;color:var(--navy);letter-spacing:.01em}.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.15em;font-weight:800;margin-top:-1px}
+.pill{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12px;color:#856018;border:1px solid #efdcb2;background:#fff9e9;padding:10px 14px;border-radius:100px}.pill:before{content:'';width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:20px}
+.eyebrow{color:var(--teal);font-size:11px;font-weight:850;letter-spacing:.15em;margin:0 0 7px}
+h1{font-size:33px;line-height:1.1;letter-spacing:-.037em;color:var(--navy);margin:0 0 7px}
+.sub{margin:0;font-size:13.5px;color:var(--muted)}.meta{margin-bottom:4px;text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}.meta b{color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:17px;padding:19px 21px 17px;position:relative;box-shadow:0 5px 21px #16364a0a;min-height:129px}
+.kpi:before{content:'';position:absolute;top:19px;right:18px;width:13px;height:13px;border-radius:4px;transform:rotate(-15deg);background:#edf5f8}.kpi:nth-child(2):before{background:#fcefe4}.kpi:nth-child(3):before{background:#e0f5ef}.kpi:nth-child(4):before{background:#fff2d3}
+.kpi-label{font-size:12px;color:#667889;font-weight:750;margin-bottom:6px}.kpi-val{font-size:37px;font-weight:850;line-height:1.06;color:var(--navy);letter-spacing:-.045em}.kpi:nth-child(2) .kpi-val{color:#c25f32}.kpi:nth-child(3) .kpi-val{color:#097b78}.kpi-small{color:#8795a1;font-size:11.5px;margin-top:8px}
+.grid{display:grid;grid-template-columns:1.17fr .83fr;gap:14px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px 21px;box-shadow:0 5px 21px #16364a09;min-height:285px}
+.panelhead{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 0 13px}.panelhead h2{font-size:16px;letter-spacing:-.018em;color:var(--navy);margin:0}.panelhead span{font-size:11px;color:#80919e}
+.dist{display:flex;align-items:center;gap:27px}.donut{height:187px;width:187px;flex:none;border-radius:50%;background:conic-gradient(var(--orange) 0 15.4167%,var(--gold) 15.4167% 31.3354%,var(--blue) 31.3354% 100%);display:grid;place-items:center;box-shadow:inset 0 0 1px #fff,0 3px 12px #21405a11}.center{height:134px;width:134px;border-radius:50%;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center}.center strong{color:var(--navy);font-size:22px;font-weight:850;letter-spacing:-.04em}.center span{font-size:10px;color:#79909e;font-weight:700;text-align:center}
+.legend{flex:1;min-width:0}.legendrow{display:grid;grid-template-columns:12px minmax(95px,1fr) 90px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #edf2f5}.legendrow:last-child{border-bottom:0}.dot{width:10px;height:10px;border-radius:4px}.low{background:var(--blue)}.mid{background:var(--gold)}.hi{background:var(--orange)}.legendrow b{font-size:12px}.legendrow small{display:block;color:#8394a0;font-size:10px}.legendrow .count{text-align:right}.legendrow .count strong{display:block;font-size:13px;color:var(--ink)}.legendrow .count em{font-style:normal;font-size:11px;color:#7b8c99}
+.scenarios{display:flex;flex-direction:column;gap:12px;padding-top:4px}.scenario{display:grid;grid-template-columns:95px 1fr 87px;gap:10px;align-items:center}.scenario .lab{font-size:12px;font-weight:750}.scenario .lab small{display:block;color:var(--muted);font-weight:500;font-size:10px}.track{height:17px;background:#eef3f6;border-radius:5px;overflow:hidden}.bar{display:block;height:100%;background:#91b1c1;border-radius:4px}.scenario.official .bar{background:var(--teal)}.scenario .out{text-align:right;color:var(--navy);font-size:12px;font-weight:800}.scenario .out small{display:block;color:var(--muted);font-size:10px;font-weight:500}.scene-note{font-size:10.5px;color:#7c8d9a;margin-top:13px;padding-top:10px;border-top:1px solid #edf2f6}
+.bottom{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;margin-top:14px}.status,.warning{border-radius:14px;min-height:96px;display:flex;align-items:center;gap:16px;padding:17px 20px}.status{background:var(--navy);color:white}.status small{display:block;color:#a8c3cf;font-size:11px;font-weight:700}.status strong{display:block;font-size:25px;line-height:1.15;letter-spacing:-.035em}.status .mini{font-size:12px;color:#d3e1e6}.progress{height:9px;background:#355061;border-radius:9px;overflow:hidden;margin-top:7px;width:220px;max-width:100%}.progress span{display:block;width:95.8333%;height:100%;background:var(--teal2)}.status .right{margin-left:auto;font-size:11px;line-height:1.35;color:#dbe7ed;max-width:180px}
+.warning{border:1px solid #eddcab;background:#fff9e9}.warn-icon{width:40px;height:40px;flex:none;border-radius:11px;background:#f6eac8;color:#99701f;display:grid;place-items:center;font-size:20px;font-weight:850}.warning p{margin:0;color:#715f38;font-size:12px;line-height:1.55}.warning strong{color:#5d4723}
+footer{display:flex;justify-content:space-between;align-items:center;gap:20px;color:#788997;margin-top:13px;font-size:10.5px}.actions{display:flex;gap:13px;align-items:center}.actions a{color:#12777b;font-weight:800;text-decoration:none}.actions a:hover{text-decoration:underline}
+@media(max-width:1000px){.grid,.bottom{grid-template-columns:1fr}.hero{align-items:flex-start}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.shell{padding:20px 15px}.hero{display:block}.meta{text-align:left;margin-top:8px}h1{font-size:27px}.kpis{gap:9px}.kpi{padding:15px 13px;min-height:109px}.kpi-val{font-size:28px}.dist{flex-direction:column;gap:9px}.donut{height:170px;width:170px}.center{height:124px;width:124px}.legend{width:100%}.scenario{grid-template-columns:75px 1fr 75px;gap:7px}.status{flex-wrap:wrap}.status .right{margin-left:0}.pill{font-size:10px;padding:7px 8px}footer{align-items:flex-start;flex-direction:column}}
+@media print{body{background:white}.shell{padding:0}@page{size:landscape;margin:.4in}.panel,.kpi{box-shadow:none}.actions{display:none}}
+
+/* Carga local del JSON: sin librerías externas ni peticiones de red */
+.uploader{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:13px 18px;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 3px 12px #16364a08;transition:background .2s,border-color .2s}
+.uploader.is-dragging{border-color:var(--teal);background:#e9f7f6}
+.upload-info{display:flex;gap:11px;align-items:center;min-width:0;flex:1}
+.upload-symbol{width:39px;height:39px;border-radius:11px;display:grid;place-items:center;color:var(--teal);background:#e3f4f2;font-size:22px;font-weight:800}
+.upload-info strong{display:block;color:var(--navy);font-size:13px}.upload-info small{display:block;color:var(--muted);font-size:11px;max-width:780px}
+.upload-buttons{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.btn-upload,.btn-reset{border-radius:10px;padding:10px 14px;font:800 12px Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.btn-upload{background:var(--teal);color:white;border:1px solid var(--teal)}.btn-upload:hover{background:#096e6e}.btn-upload:focus-within{outline:3px solid #80d8d3}
+.btn-reset{background:#f4f8fa;color:var(--ink);border:1px solid var(--line)}.btn-reset:hover{background:#e5eef3}
+#jsonInput{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.load-status{font-size:11px;color:#43806d;font-weight:650;margin:0 0 15px;padding-left:2px}
+.load-status.error{color:#b84331}.load-status.notice{color:#647586}
+@media(max-width:640px){.uploader{align-items:stretch}.upload-info{width:100%}.upload-buttons{width:100%}.btn-upload,.btn-reset{flex:1;text-align:center}}
+@media print{.uploader,.load-status{display:none}}
+
+/* Seguimiento del backlog */
+.seg{margin-top:14px}.seg .panel{min-height:0}
+.segtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:11px 13px}.tile b{display:block;font-size:24px;color:var(--navy);letter-spacing:-.03em;line-height:1.1}.tile span{font-size:11px;color:var(--muted)}
+.tile.warn b{color:#c25f32}.tile.ok b{color:#097b78}
+.phases{display:grid;gap:7px;margin-bottom:14px}.phase{display:grid;grid-template-columns:150px 1fr 54px;gap:10px;align-items:center;font-size:12px}.phase .track{height:12px}.phase .bar{background:var(--teal)}.phase em{font-style:normal;color:var(--muted);text-align:right;font-size:11px}
+.tools{display:flex;gap:8px;align-items:center;margin-bottom:9px;font-size:12px;color:var(--muted)}.tools select{font:600 12px Inter,Arial,sans-serif;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table.tasks{width:100%;border-collapse:collapse;font-size:12px;min-width:720px}.tasks th{background:var(--soft);text-align:left;color:var(--muted);font-size:10.5px;letter-spacing:.06em;padding:8px 10px;white-space:nowrap}.tasks td{padding:7px 10px;border-top:1px solid #edf2f5;vertical-align:top}.tasks td.num{text-align:left;white-space:nowrap}.tasks a,.tasks td:first-child{white-space:nowrap}.tasks a{color:#12777b;font-weight:800;text-decoration:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:800;white-space:nowrap}
+.b-Completado{background:#e0f5ef;color:#0b6f66}.b-En-proceso{background:#fff2d3;color:#7a5a12}
+.segnote{font-size:10.5px;color:#7c8d9a;margin-top:9px}
+@media(max-width:1000px){.segtiles{grid-template-columns:repeat(3,1fr)}.phase{grid-template-columns:110px 1fr 46px}}
+@media print{.tools{display:none}}
+</style></head><body><div class="shell">
+<header><div class="brand"><div class="logo">L</div><div><strong>LOGISMART</strong><small>CIENCIA DE DATOS · EV3</small></div></div><span class="pill">PROTOTIPO · DATOS SINTÉTICOS</span></header>
+<section class="hero"><div><p class="eyebrow">PANEL DE DEMOSTRACIÓN · H6–T2</p><h1>Alertas preventivas de última milla</h1><p class="sub">Vista ejecutiva de la inferencia histórica · XGBoost · revisión humana priorizada</p></div><div class="meta"><b>Corte de evidencia:</b> 04 nov 2026<br>Corrida histórica, no monitoreo en vivo</div></section>
+<section class="uploader" id="uploadZone" aria-label="Cargar resultados desde un archivo JSON">
+  <div class="upload-info"><div class="upload-symbol" aria-hidden="true">⇧</div><div><strong>Cargar JSON: alertas o seguimiento</strong><small><code>h6_t2_indicadores.json</code> actualiza las alertas · <code>seguimiento.json</code> actualiza el backlog · lectura local, sin enviar archivos a Internet</small></div></div>
+  <div class="upload-buttons"><label for="jsonInput" class="btn-upload">Cargar archivo JSON<input id="jsonInput" type="file" accept=".json,application/json"></label><button type="button" id="resetDemo" class="btn-reset">Restaurar demostración</button></div>
+</section><p id="loadStatus" class="load-status notice" role="status" aria-live="polite">Vista inicial: resultados históricos H6-T2 · 1.050.000 operaciones sintéticas. Arrastra un archivo JSON aquí o usa «Cargar archivo JSON».</p>
+<section class="kpis" aria-label="Indicadores de la corrida histórica">
+<div class="kpi"><div class="kpi-label">Operaciones analizadas</div><div class="kpi-val" id="kpiOps">1.050.000</div><div class="kpi-small">Registros sintéticos procesados</div></div>
+<div class="kpi"><div class="kpi-label">Alertas prioritarias</div><div class="kpi-val" id="kpiAlerts">161.875</div><div class="kpi-small">Operaciones señaladas para revisión</div></div>
+<div class="kpi"><div class="kpi-label">Tasa de alerta</div><div class="kpi-val" id="kpiRate">15,42 %</div><div class="kpi-small">Del histórico completo</div></div>
+<div class="kpi"><div class="kpi-label">Umbral del modelo</div><div class="kpi-val" id="kpiThreshold">0,15</div><div class="kpi-small">Configuración oficial de validación</div></div>
+</section>
+<section class="grid">
+<div class="panel"><div class="panelhead"><h2>Distribución por prioridad</h2><span id="distOps">1.050.000 operaciones</span></div><div class="dist">
+<div class="donut" id="riskDonut"><div class="center"><strong id="donutRate">15,42 %</strong><span>prioridad<br>alta</span></div></div>
+<div class="legend">
+<div class="legendrow" id="riskLow"><span class="dot low"></span><div><b>Baja</b><small>Sin alerta prioritaria</small></div><div class="count"><strong>720.979</strong><em>68,66 %</em></div></div>
+<div class="legendrow" id="riskMid"><span class="dot mid"></span><div><b>Observación</b><small>Seguimiento preventivo</small></div><div class="count"><strong>167.146</strong><em>15,92 %</em></div></div>
+<div class="legendrow" id="riskHigh"><span class="dot hi"></span><div><b>Prioritaria</b><small>Revisión humana sugerida</small></div><div class="count"><strong>161.875</strong><em>15,42 %</em></div></div>
+</div></div></div>
+<div class="panel"><div class="panelhead"><h2>Escenarios de carga de alertas</h2><span>Simulación de umbrales</span></div>
+<div class="scenarios">
+<div class="scenario" id="sceneCoverage"><div class="lab">Cobertura<small>Umbral 0,10</small></div><div class="track"><span class="bar" style="width:100%"></span></div><div class="out">329.021<small>31,34 %</small></div></div>
+<div class="scenario official" id="sceneOfficial"><div class="lab">Oficial<small>Umbral 0,15</small></div><div class="track"><span class="bar" style="width:49.2%"></span></div><div class="out">161.875<small>15,42 %</small></div></div>
+<div class="scenario" id="sceneLess"><div class="lab">Menos alertas<small>Umbral 0,20</small></div><div class="track"><span class="bar" style="width:23.76%"></span></div><div class="out">78.166<small>7,44 %</small></div></div>
+</div><div class="scene-note">Un umbral menor genera más casos para revisión. Las cifras representan carga, no exactitud ni retrasos evitados.</div>
+</div></section>
+<section class="seg" id="seguimiento"><div class="panel">
+<div class="panelhead"><h2>Seguimiento del backlog</h2><span id="segSource">—</span></div>
+<div class="segtiles" id="segTiles"></div>
+<div class="phases" id="segPhases"></div>
+<div class="tools"><label for="segFilter">Mostrar:</label><select id="segFilter"><option value="todas">Todas las tareas</option><option value="hechas">Completadas</option><option value="proceso">En proceso</option></select></div>
+<div class="tablewrap"><table class="tasks"><thead><tr><th>ID</th><th>Tarea</th><th>Fase CRISP-DM</th><th>Prio.</th><th>Avance</th><th>Plan (inicio → término)</th><th>Estado</th></tr></thead><tbody id="segBody"></tbody></table></div>
+<p class="segnote" id="segNote"></p>
+</div></section>
+<section class="bottom"><div class="status"><div><small>TRAZABILIDAD DEL PROYECTO · GITHUB PROJECTS</small><strong id="segHeadline">— tareas cerradas</strong><div class="progress"><span id="segBar" style="width:0%"></span></div></div><div class="right"><b id="segPct">—</b> avance promedio<br><span id="segOpen">—</span></div></div>
+<div class="warning"><div class="warn-icon">!</div><p><strong>Interpretación responsable.</strong> Los resultados provienen de datos sintéticos y un proceso retrospectivo. Las alertas no confirman retrasos ni demuestran una reducción real del 20 %.</p></div></section>
+<footer><span>Fuente: <code id="dataFileName">h6_t2_indicadores.json · ejemplo histórico</code> · Datos sintéticos · no es monitoreo en vivo</span><div class="actions"><a href="https://github.com/carlos31255/EV3_LOGISMART/tree/main/dashboard" target="_blank" rel="noopener noreferrer">Código del dashboard</a><a href="https://github.com/users/carlos31255/projects/1/views/2" target="_blank" rel="noopener">Tablero del backlog</a></div></footer>
+</div><script>
+"use strict";
+// Datos iniciales verificables del archivo H6-T2 del proyecto. El archivo del usuario
+// se lee únicamente en su navegador: no hay backend ni transmisión de datos.
+const EJEMPLO_H6_T2 = {"tarea":"H6-T2","tipo":"prototipo_visual_local","formato_definitivo":"dashboard_html_autocontenido","corrida_h6_t1":"20261104T170000050763Z_a51e87","origen":"predicciones históricas sintéticas, incluyen train/val/test; inferencia sin etiquetas","indicadores":{"operaciones":1050000,"alertas":161875,"tasa_alertas":0.15416666666666667,"umbral_oficial":0.15000000000000002,"probabilidad_media":0.08914175711740953,"probabilidad_minima":0.00683802,"probabilidad_maxima":0.88621801,"casos_ambiguos_por_redondeo_en_umbral":0},"niveles_riesgo":[{"nivel":"Bajo","operaciones":720979,"porcentaje":68.66466666666666},{"nivel":"Observación","operaciones":167146,"porcentaje":15.918666666666667},{"nivel":"Prioritario","operaciones":161875,"porcentaje":15.416666666666668}],"escenarios":[{"escenario":"Mayor cobertura","umbral":0.1,"alertas":329021,"porcentaje_operaciones":31.33533333333333},{"escenario":"Umbral oficial","umbral":0.15000000000000002,"alertas":161875,"porcentaje_operaciones":15.416666666666668},{"escenario":"Menos alertas","umbral":0.2,"alertas":78166,"porcentaje_operaciones":7.4443809523809525}],"alcance":"Cantidad de alertas y prioridades, NO métricas de exactitud ni impacto operativo","limitaciones":["Datos sintéticos, no representan operación real en vivo","Las predicciones incluyen períodos de entrenamiento; no interpretar como precisión fuera de muestra","Las probabilidades no están certificadas como calibradas para riesgo real","Las alertas no demuestran que se hayan evitado retrasos","No existe dotación confirmada para atender los casos prioritarios","El entregable funcional es el dashboard HTML (dashboard/index.html)"]};
+/*SEGUIMIENTO_START*/const SEGUIMIENTO_INICIAL = {"tipo": "seguimiento_backlog", "proyecto": "LOGISMART", "fuente": "GitHub Projects · Planificación · Backlog LOGISMART", "fecha_corte": "2026-11-04", "resumen": {"total": 24, "completadas": 23, "en_proceso": 1, "avance_promedio": 98.3}, "tareas": [{"id": "H1-T1", "titulo": "Definir Project Charter, alcance y gobernanza", "issue": 1, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/1", "fase": "Business Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-08-12", "termino": "2026-08-18"}, {"id": "H1-T2", "titulo": "Levantamiento de necesidades con Gerencia de Operaciones", "issue": 2, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/2", "fase": "Business Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-08-12", "termino": "2026-08-21"}, {"id": "H1-T3", "titulo": "Definir KPIs operacionales", "issue": 3, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/3", "fase": "Business Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-08-19", "termino": "2026-08-23"}, {"id": "H1-T4", "titulo": "Priorizar requerimientos mediante MoSCoW", "issue": 4, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/4", "fase": "Business Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-08-21", "termino": "2026-08-25"}, {"id": "H2-T1", "titulo": "Obtención de datos", "issue": 5, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/5", "fase": "Data Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-08-26", "termino": "2026-09-04"}, {"id": "H2-T2", "titulo": "Análisis exploratorio de datos (EDA)", "issue": 6, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/6", "fase": "Data Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-02", "termino": "2026-09-10"}, {"id": "H2-T3", "titulo": "Calidad de datos y sesgos territoriales", "issue": 7, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/7", "fase": "Data Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-06", "termino": "2026-09-13"}, {"id": "H2-T4", "titulo": "Seudonimización de identificadores", "issue": 8, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/8", "fase": "Data Understanding", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-09", "termino": "2026-09-15"}, {"id": "H3-T1", "titulo": "Limpieza e imputación de datos", "issue": 9, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/9", "fase": "Data Preparation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-16", "termino": "2026-09-23"}, {"id": "H3-T2", "titulo": "Anonimización de datos", "issue": 10, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/10", "fase": "Data Preparation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-20", "termino": "2026-09-27"}, {"id": "H3-T3", "titulo": "Rebalanceo de datos por comuna", "issue": 11, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/11", "fase": "Data Preparation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-25", "termino": "2026-10-02"}, {"id": "H3-T4", "titulo": "Ingeniería de características", "issue": 12, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/12", "fase": "Data Preparation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-09-28", "termino": "2026-10-06"}, {"id": "H4-T1", "titulo": "Entrenamiento de modelos predictivos", "issue": 13, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/13", "fase": "Modeling", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-10-07", "termino": "2026-10-18"}, {"id": "H4-T2", "titulo": "Interpretabilidad del modelo mediante SHAP", "issue": 15, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/15", "fase": "Modeling", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-10-14", "termino": "2026-10-23"}, {"id": "H4-T3", "titulo": "Optimización de hiperparámetros", "issue": 16, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/16", "fase": "Modeling", "prioridad": "Should", "estado": "Completado", "avance": 100, "inicio": "2026-10-18", "termino": "2026-10-25"}, {"id": "H4-T4", "titulo": "Análisis de sesgos en predicciones", "issue": 17, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/17", "fase": "Modeling", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-10-21", "termino": "2026-10-27"}, {"id": "H5-T1", "titulo": "Evaluación de métricas del modelo", "issue": 18, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/18", "fase": "Evaluation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-10-28", "termino": "2026-11-03"}, {"id": "H5-T2", "titulo": "Pruebas de ejecución por lotes (Batch)", "issue": 19, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/19", "fase": "Evaluation", "prioridad": "Should", "estado": "Completado", "avance": 100, "inicio": "2026-10-31", "termino": "2026-11-06"}, {"id": "H5-T3", "titulo": "Auditoría de equidad territorial", "issue": 20, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/20", "fase": "Evaluation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-11-04", "termino": "2026-11-08"}, {"id": "H5-T4", "titulo": "Validación de negocio y umbrales de alerta", "issue": 21, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/21", "fase": "Evaluation", "prioridad": "Must", "estado": "Completado", "avance": 100, "inicio": "2026-11-06", "termino": "2026-11-11"}, {"id": "H6-T1", "titulo": "Automatización del pipeline y respaldos", "issue": 22, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/22", "fase": "Deployment", "prioridad": "Should", "estado": "Completado", "avance": 100, "inicio": "2026-11-11", "termino": "2026-11-20"}, {"id": "H6-T2", "titulo": "Visualización de alertas e indicadores", "issue": 23, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/23", "fase": "Deployment", "prioridad": "Should", "estado": "Completado", "avance": 100, "inicio": "2026-11-15", "termino": "2026-11-24"}, {"id": "H6-T3", "titulo": "Elaboración del informe de implementación, monitoreo y control", "issue": 24, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/24", "fase": "Deployment", "prioridad": "Should", "estado": "Completado", "avance": 100, "inicio": "2026-11-22", "termino": "2026-11-28"}, {"id": "H6-T4", "titulo": "Evaluación final y cierre", "issue": 25, "url": "https://github.com/carlos31255/EV3_LOGISMART/issues/25", "fase": "Deployment", "prioridad": "Must", "estado": "En proceso", "avance": 60, "inicio": "2026-11-27", "termino": "2026-12-01"}]};/*SEGUIMIENTO_END*/
+const formatter = new Intl.NumberFormat("es-CL", {maximumFractionDigits: 0});
+const fixed = new Intl.NumberFormat("es-CL", {minimumFractionDigits: 2,maximumFractionDigits: 2});
+const numberText = x => formatter.format(x);
+const percentText = x => `${fixed.format(x)} %`;
+const decimalText = x => fixed.format(x);
+const $ = id => document.getElementById(id);
+const finite = x => typeof x === "number" && Number.isFinite(x);
+const count = x => Number.isSafeInteger(x) && x >= 0;
+
+function validateAndNormalize(doc) {
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) throw Error("El contenido debe ser un objeto JSON.");
+  if (!doc.indicadores || !Array.isArray(doc.niveles_riesgo) || !Array.isArray(doc.escenarios)) {
+    throw Error("Formato no compatible. Se requieren indicadores, niveles_riesgo y escenarios (formato H6-T2).");
+  }
+  const k = doc.indicadores;
+  if (!count(k.operaciones) || k.operaciones === 0 || !count(k.alertas) || k.alertas > k.operaciones) {
+    throw Error("Los campos operaciones y alertas deben ser cantidades enteras coherentes.");
+  }
+  if (!finite(k.umbral_oficial) || k.umbral_oficial < 0 || k.umbral_oficial > 1) {
+    throw Error("umbral_oficial debe contener un número entre 0 y 1.");
+  }
+  const niveles = {};
+  for (const item of doc.niveles_riesgo) {
+    if (typeof item.nivel !== "string" || !count(item.operaciones)) throw Error("Hay niveles de riesgo inválidos.");
+    const key = item.nivel.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (!(key === "bajo" || key === "observacion" || key === "prioritario") || niveles[key]) throw Error("Los niveles de riesgo deben ser Bajo, Observación y Prioritario, sin duplicados.");
+    niveles[key] = item.operaciones;
+  }
+  if (Object.keys(niveles).length !== 3 || niveles.bajo + niveles.observacion + niveles.prioritario !== k.operaciones) {
+    throw Error("La suma de Bajo, Observación y Prioritario no coincide con operaciones.");
+  }
+  if (niveles.prioritario !== k.alertas) throw Error("Las alertas no coinciden con los casos de prioridad alta.");
+  if ("tasa_alertas" in k && (!finite(k.tasa_alertas) || Math.abs(k.tasa_alertas - k.alertas/k.operaciones) > 0.0001)) {
+    throw Error("tasa_alertas no coincide con la cantidad de alertas y operaciones.");
+  }
+  const esc = {};
+  for (const s of doc.escenarios) {
+    if (typeof s.escenario !== "string" || !count(s.alertas) || s.alertas > k.operaciones || !finite(s.umbral) || s.umbral < 0 || s.umbral > 1) {
+      throw Error("Hay escenarios de alerta inválidos.");
+    }
+    if (!(s.escenario in {"Mayor cobertura":1,"Umbral oficial":1,"Menos alertas":1}) || esc[s.escenario]) {
+      throw Error("Se requieren los escenarios Mayor cobertura, Umbral oficial y Menos alertas.");
+    }
+    esc[s.escenario] = {alertas:s.alertas, umbral:s.umbral};
+  }
+  if (Object.keys(esc).length !== 3) throw Error("El JSON debe contener los tres escenarios de umbral.");
+  if (esc["Umbral oficial"].alertas !== k.alertas || Math.abs(esc["Umbral oficial"].umbral - k.umbral_oficial) > 0.0001) {
+    throw Error("El escenario oficial debe coincidir con las alertas y el umbral del indicador general.");
+  }
+  // Mantener los tres escenarios consistentes con su interpretación como umbrales.
+  if (!(esc["Mayor cobertura"].umbral <= esc["Umbral oficial"].umbral && esc["Umbral oficial"].umbral <= esc["Menos alertas"].umbral &&
+        esc["Mayor cobertura"].alertas >= esc["Umbral oficial"].alertas && esc["Umbral oficial"].alertas >= esc["Menos alertas"].alertas)) {
+    throw Error("Los escenarios no respetan la relación esperada entre umbral y cantidad de alertas.");
+  }
+  return {ops:k.operaciones,alerts:k.alertas,threshold:k.umbral_oficial,niveles,esc};
+}
+
+function render(doc, filename) {
+  // Validación completa antes de modificar cualquier elemento de la pantalla.
+  const data = validateAndNormalize(doc);
+  const {ops, alerts, threshold, niveles, esc} = data;
+  const low = niveles.bajo / ops * 100, mid = niveles.observacion / ops * 100, high = niveles.prioritario / ops * 100;
+  $("kpiOps").textContent = numberText(ops);
+  $("kpiAlerts").textContent = numberText(alerts);
+  $("kpiRate").textContent = percentText(alerts / ops * 100);
+  $("kpiThreshold").textContent = decimalText(threshold);
+  $("distOps").textContent = `${numberText(ops)} operaciones`;
+  $("donutRate").textContent = percentText(high);
+  $("riskDonut").style.background = `conic-gradient(var(--orange) 0 ${high}%, var(--gold) ${high}% ${high+mid}%, var(--blue) ${high+mid}% 100%)`;
+  for (const [id, n, p] of [["riskLow",niveles.bajo,low],["riskMid",niveles.observacion,mid],["riskHigh",niveles.prioritario,high]]) {
+    const root = $(id);root.querySelector(".count strong").textContent=numberText(n);
+    root.querySelector(".count em").textContent=percentText(p);
+  }
+  const max = Math.max(esc["Mayor cobertura"].alertas,1);
+  for (const [id,key] of [["sceneCoverage","Mayor cobertura"],["sceneOfficial","Umbral oficial"],["sceneLess","Menos alertas"]]) {
+    const s = esc[key], node=$(id);
+    node.querySelector(".lab small").textContent=`Umbral ${decimalText(s.umbral)}`;
+    node.querySelector(".bar").style.width=`${s.alertas/max*100}%`;
+    const out=node.querySelector(".out");out.firstChild.textContent=numberText(s.alertas);
+    out.querySelector("small").textContent=percentText(s.alertas/ops*100);
+  }
+  $("dataFileName").textContent=filename;
+}
+function status(message, kind="notice") {
+  const node=$("loadStatus");node.textContent=message;node.className=`load-status ${kind}`;
+}
+
+// ---------- Seguimiento del backlog ----------
+let segActual = null;
+const ESTADOS_OK = ["Completado","En proceso"];
+const isoDate = x => typeof x === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x) && !Number.isNaN(Date.parse(x));
+const fechaCorta = x => { const [y,m,d] = x.split("-"); return `${d}-${m}-${y.slice(2)}`; };
+function validateSeguimiento(doc) {
+  if (!Array.isArray(doc.tareas) || doc.tareas.length === 0) throw Error("El seguimiento debe incluir una lista 'tareas' no vacía.");
+  if (!isoDate(doc.fecha_corte)) throw Error("fecha_corte debe tener formato AAAA-MM-DD.");
+  const ids = new Set();
+  for (const t of doc.tareas) {
+    if (typeof t.id !== "string" || typeof t.titulo !== "string" || ids.has(t.id)) throw Error("Hay tareas sin id/título o con id repetido.");
+    ids.add(t.id);
+    if (!ESTADOS_OK.includes(t.estado)) throw Error(`Estado no reconocido en ${t.id}: use Completado o En proceso.`);
+    if (!finite(t.avance) || t.avance < 0 || t.avance > 100) throw Error(`avance inválido en ${t.id} (0–100).`);
+    if (!isoDate(t.inicio) || !isoDate(t.termino) || t.inicio > t.termino) throw Error(`Fechas planificadas inválidas en ${t.id}.`);
+  }
+  return doc;
+}
+function el(tag, text, cls) { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
+function renderSeguimiento(doc, filename) {
+  validateSeguimiento(doc);
+  segActual = doc;
+  const T = doc.tareas, n = T.length, done = T.filter(t => t.estado === "Completado").length;
+  const avg = T.reduce((a,t) => a + t.avance, 0) / n;
+  $("segHeadline").textContent = `${done} / ${n} tareas completadas`;
+  $("segBar").style.width = `${avg}%`;
+  $("segPct").textContent = percentText(avg);
+  const abiertas = T.filter(t => t.estado !== "Completado");
+  $("segOpen").textContent = abiertas.length ? `En proceso: ${abiertas.map(t => t.id).join(", ")}` : "Sin tareas en proceso";
+  $("segSource").textContent = `${filename} · corte ${fechaCorta(doc.fecha_corte)}`;
+  const tiles = $("segTiles"); tiles.replaceChildren();
+  for (const [v,l,k] of [[`${done}/${n}`,"tareas completadas","ok"],[n-done,"en proceso",""],[percentText(avg),"avance promedio","ok"]]) {
+    const d = el("div", null, `tile ${k}`); d.append(el("b", String(v)), el("span", l)); tiles.append(d);
+  }
+  const fases = {}; for (const t of T) { const f = t.fase || "Sin fase"; (fases[f] ||= []).push(t.avance); }
+  const ph = $("segPhases"); ph.replaceChildren();
+  for (const [f,a] of Object.entries(fases)) {
+    const m = a.reduce((x,y)=>x+y,0)/a.length, row = el("div", null, "phase"), tr = el("div", null, "track"), b = el("span", null, "bar");
+    b.style.width = `${m}%`; tr.append(b); row.append(el("span", f), tr, el("em", `${a.length} · ${Math.round(m)} %`)); ph.append(row);
+  }
+  $("segNote").textContent = "Fechas del cronograma planificado (simulado, 16 semanas). Fuente: tablero GitHub Projects.";
+  drawTable();
+}
+function drawTable() {
+  if (!segActual) return;
+  const f = $("segFilter").value, body = $("segBody"); body.replaceChildren();
+  const ok = t => f === "todas" || (f === "hechas" && t.estado === "Completado") || (f === "proceso" && t.estado !== "Completado");
+  for (const t of segActual.tareas.filter(ok)) {
+    const tr = el("tr"), id = el("td"), idText = el(t.url && /^https:\/\//.test(t.url) ? "a" : "span", t.id);
+    if (idText.tagName === "A") { idText.href = t.url; idText.target = "_blank"; idText.rel = "noopener noreferrer"; }
+    id.append(idText);
+    const est = el("td"); est.append(el("span", t.estado, "badge b-" + t.estado.replace(/ /g,"-")));
+    tr.append(id, el("td", t.titulo), el("td", t.fase || "—"), el("td", t.prioridad || "—"), el("td", `${t.avance} %`, "num"),
+      el("td", `${fechaCorta(t.inicio)} → ${fechaCorta(t.termino)}`, "num"), est);
+    body.append(tr);
+  }
+}
+$("segFilter").addEventListener("change", drawTable);
+async function importJSON(file) {
+  if (!file) return;
+  if (file.size > 5_000_000) {status("El archivo excede el límite de 5 MB. Selecciona un resumen JSON H6-T2.","error");return;}
+  try {
+    const source=await file.text();const data=JSON.parse(source);
+    if (data && Array.isArray(data.tareas)) {
+      renderSeguimiento(data,file.name);
+      status(`✓ Seguimiento del backlog actualizado desde ${file.name}. Datos leídos localmente; no se envió ningún archivo.`,"success");
+    } else {
+      render(data,file.name);
+      status(`✓ Indicadores y gráficos actualizados desde ${file.name}. Datos leídos localmente; no se envió ningún archivo.`,"success");
+    }
+  } catch(err) {
+    status(`No se aplicaron cambios: ${err instanceof SyntaxError ? "el archivo no contiene JSON válido." : err.message}`,"error");
+  }
+}
+$("jsonInput").addEventListener("change",e=>{const f=e.target.files?.[0];importJSON(f);e.target.value="";});
+$("resetDemo").addEventListener("click",()=>{render(EJEMPLO_H6_T2,"h6_t2_indicadores.json · ejemplo histórico");if(SEGUIMIENTO_INICIAL)renderSeguimiento(SEGUIMIENTO_INICIAL,"seguimiento.json · GitHub Projects");status("Vista restaurada: resultados históricos verificables del proyecto H6-T2.","notice");});
+const zone=$("uploadZone");
+zone.addEventListener("dragover",e=>{e.preventDefault();zone.classList.add("is-dragging");});
+zone.addEventListener("dragleave",()=>zone.classList.remove("is-dragging"));
+zone.addEventListener("drop",e=>{e.preventDefault();zone.classList.remove("is-dragging");importJSON(e.dataTransfer?.files?.[0]);});
+// La portada ya trae los valores del JSON original para funcionar incluso sin JS.
+// Reconciliar con el dato integrado al iniciar.
+render(EJEMPLO_H6_T2,"h6_t2_indicadores.json · ejemplo histórico");
+if (SEGUIMIENTO_INICIAL) renderSeguimiento(SEGUIMIENTO_INICIAL,"seguimiento.json · GitHub Projects");
+</script></body></html>
