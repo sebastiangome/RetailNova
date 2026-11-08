@@ -1,0 +1,28 @@
+{
+  "origen": "auditoria_comunas_test.json; datos sintéticos; test agosto-septiembre 2026",
+  "alcance": "diagnóstico descriptivo H4-T4; NO optimiza umbral ni reentrena; H5-T3 realizará auditoría formal",
+  "total_operaciones": 149935,
+  "total_retrasos": 21795,
+  "total_alertas": 19522,
+  "recall_global": 0.30952053223216336,
+  "precision_global": 0.3455588566745211,
+  "fpr_global": 0.09970344935227095,
+  "brecha_recall_comunas_con_al_menos_30_retrasos": 0.300910491700284,
+  "correlacion_spearman_operaciones_recall": 0.7,
+  "nota_correlacion": "Asociación descriptiva entre 19 comunas; no demuestra causalidad, sesgo ni significancia.",
+  "umbral_muestra_pequena": "Menos operaciones que mediana territorial o menos de 30 retrasos; solo etiqueta de revisión",
+  "limitaciones": [
+    "Registros sintéticos; sin validación en operaciones reales",
+    "Diferencias de desempeño no prueban discriminación ni causalidad",
+    "Intervalos Wilson suponen observaciones independientes, posible agrupación por rutas/conductores",
+    "Tasas base de retraso y composición territorial varían; comparaciones brutas pueden confundir",
+    "No se deben ajustar umbrales usando el conjunto test"
+  ],
+  "medidas_mitigacion_propuestas": [
+    "Revisar cobertura y calidad de datos por comuna y por período; ampliar muestras donde sea necesario",
+    "Examinar diferencias condicionando por distancia, franja horaria y tasa base de retraso",
+    "Monitorear recall, precision y falsos positivos por comuna con incertidumbre",
+    "Probar medidas de balanceo exclusivamente en train y comparar en validación temporal",
+    "Aplicar alertas solo como apoyo operativo, sin sanciones automáticas a conductores"
+  ]
+}

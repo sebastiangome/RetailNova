@@ -1,0 +1,197 @@
+{
+  "tarea": "H5-T3",
+  "fuente": "output/resultados/sesgos_equidad/auditoria_comunas_test.json (XGBoost oficial H4-T1)",
+  "conjunto": "test sintético, agosto-septiembre 2026; descripción, no ajuste",
+  "numero_comunas": 19,
+  "numero_zonas": 2,
+  "operaciones": 149935,
+  "retrasos": 21795,
+  "falsos_negativos": 15049,
+  "falsos_positivos": 12776,
+  "recall_global": 0.30952053223216336,
+  "precision_global": 0.3455588566745211,
+  "fpr_global": 0.09970344935227095,
+  "mediana_operaciones_por_comuna_test": 7908.0,
+  "spearman_operaciones_recall": 0.7,
+  "brecha_recall_comunas_pp": 30.0910491700284,
+  "zonas": [
+    {
+      "zona": "Región Metropolitana",
+      "operaciones": 126092,
+      "retrasos": 18576,
+      "recall": 0.3157299742,
+      "precision": 0.3444326991,
+      "fpr": 0.1038264072,
+      "fn": 12711,
+      "fp": 11163
+    },
+    {
+      "zona": "Región de Valparaíso",
+      "operaciones": 23843,
+      "retrasos": 3219,
+      "recall": 0.2736874806,
+      "precision": 0.3532477947,
+      "fpr": 0.0782098526,
+      "fn": 2338,
+      "fp": 1613
+    }
+  ],
+  "segmentos_representacion_test": [
+    {
+      "representacion_test": "Bajo mediana",
+      "operaciones": 25636,
+      "retrasos": 2939,
+      "recall": 0.2031303164,
+      "precision": 0.3241042345,
+      "fpr": 0.0548530643,
+      "fn": 2342,
+      "fp": 1245
+    },
+    {
+      "representacion_test": "Igual o sobre mediana",
+      "operaciones": 124299,
+      "retrasos": 18856,
+      "recall": 0.3261030972,
+      "precision": 0.3477941176,
+      "fpr": 0.1093576624,
+      "fn": 12707,
+      "fp": 11531
+    }
+  ],
+  "comunas_revision_exploratoria": [
+    {
+      "comuna_destino": "Santiago",
+      "recall": 0.4200814762,
+      "fpr": 0.1689854276,
+      "revision_recall": false,
+      "revision_fpr": true
+    },
+    {
+      "comuna_destino": "Las Condes",
+      "recall": 0.3784994401,
+      "fpr": 0.1417932902,
+      "revision_recall": false,
+      "revision_fpr": true
+    },
+    {
+      "comuna_destino": "Maipú",
+      "recall": 0.2578553616,
+      "fpr": 0.0850387281,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Providencia",
+      "recall": 0.3341746593,
+      "fpr": 0.1126113714,
+      "revision_recall": false,
+      "revision_fpr": true
+    },
+    {
+      "comuna_destino": "La Florida",
+      "recall": 0.2747695853,
+      "fpr": 0.0851878876,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Puente Alto",
+      "recall": 0.3423212192,
+      "fpr": 0.1174814969,
+      "revision_recall": false,
+      "revision_fpr": true
+    },
+    {
+      "comuna_destino": "Ñuñoa",
+      "recall": 0.211351755,
+      "fpr": 0.0582623859,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Valparaíso",
+      "recall": 0.3170529801,
+      "fpr": 0.1101846337,
+      "revision_recall": false,
+      "revision_fpr": true
+    },
+    {
+      "comuna_destino": "Quilicura",
+      "recall": 0.1653718091,
+      "fpr": 0.04978602,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "San Bernardo",
+      "recall": 0.1921787709,
+      "fpr": 0.054015433,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Pudahuel",
+      "recall": 0.2463768116,
+      "fpr": 0.0788916343,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Quilpué",
+      "recall": 0.2242744063,
+      "fpr": 0.0466026325,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Villa Alemana",
+      "recall": 0.1398305085,
+      "fpr": 0.0302336235,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Colina",
+      "recall": 0.1191709845,
+      "fpr": 0.0404454865,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Lampa",
+      "recall": 0.1928571429,
+      "fpr": 0.0533778148,
+      "revision_recall": true,
+      "revision_fpr": false
+    },
+    {
+      "comuna_destino": "Concón",
+      "recall": 0.178807947,
+      "fpr": 0.0380293863,
+      "revision_recall": true,
+      "revision_fpr": false
+    }
+  ],
+  "rebalanceo": {
+    "aplicado_previamente": false,
+    "efectividad": "No evaluable: no se implementó un modelo reentrenado con rebalanceo",
+    "plan_validacion": "Probar únicamente con train y validar temporalmente en julio; no elegir estrategias mediante test"
+  },
+  "medidas_correctivas_propuestas_no_implementadas": [
+    "Revisar cobertura histórica y calidad de etiquetas por comuna y por mes (especialmente minoritarias)",
+    "Examinar diferencias por distancia, horarios, vehículo y prevalencia de retrasos antes de atribuir la brecha a representación",
+    "Ensayar ponderación o rebalanceo solo en train y medir recall, precision y FPR por comuna en validación temporal",
+    "Monitorear tasas y errores por comuna con intervalos e investigar alertas incorrectas y retrasos no detectados",
+    "Usar las alertas como apoyo logístico, nunca como mecanismo automático de sanción de conductores"
+  ],
+  "limitaciones": [
+    "Datos sintéticos; no constituyen evidencia de equidad o discriminación en operaciones reales",
+    "El dataset de test ya fue examinado en H4-T1/H4-T4/H5-T1; esta auditoría es descriptiva, no una validación nueva",
+    "Se dispone de la representación de test, no de una auditoría equivalente de la distribución territorial del train",
+    "Intervalos Wilson aproximados suponen independencia; pueden subestimar incertidumbre por agrupación de rutas/conductores",
+    "Comparación de intervalos con tasa global no es prueba formal de significancia; existe comparación múltiple",
+    "Diferencias pueden confundirse por distinta prevalencia, recorridos, tipos de entrega y horario",
+    "No se modificó el modelo oficial ni se escogieron umbrales usando test"
+  ],
+  "umbral_oficial_fijado_en_validacion": 0.15000000000000002
+}
