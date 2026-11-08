@@ -1,0 +1,4 @@
+escenario,umbral,precision,recall,f1,tasa_alertas,alertas_validacion,alertas_diarias_promedio,verdaderos_positivos,falsos_positivos,falsos_negativos,cabe_en_capacidad_simulada
+Mayor cobertura,0.1,0.2152333431,0.7124259205,0.3305908077,0.4556884145,34070,1099.03,7333,26737,2960,
+Oficial: equilibrio de F1,0.15000000000000002,0.2616490938,0.5231710871,0.3488372093,0.2752721825,20581,663.9,5385,15196,4908,
+Menos alertas,0.2,0.31071960730000003,0.3444088215,0.3266980002,0.1525960998,11409,368.03,3545,7864,6748,
